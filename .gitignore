@@ -1,0 +1,29 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Credenciais (NUNCA commitar)
+.env
+.env.local
+.env.production
+usuarios.json
+src/supabase-client.local.js
+
+# Build
+dist/
+build/
+node_modules/
+
+# Cache
+.cache/
+.parcel-cache/

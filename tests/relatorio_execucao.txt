@@ -1,0 +1,267 @@
+==========================================
+  REVISAO-MOTO :: Run de testes
+==========================================
+  Raiz:    /home/pguser/revisao-moto
+  PG bin:  /usr/lib/postgresql/16/bin
+  PG base: /tmp/revmoto_pg.jIZ2oN (efemero)
+  PG port: 5433
+
+[1/3] Inicializando Postgres...
+[2/3] Subindo servidor...
+[3/3] Executando suites...
+
+REVISAO-MOTO :: Suite de testes da Fase 0
+Raiz do projeto: /home/pguser/revisao-moto
+Postgres: /tmp/revmoto_pg.jIZ2oN/sock:5433/revisao_moto_test (user: postgres)
+
+======================================================================
+  1. ESTRUTURA DE PASTAS
+======================================================================
+  ✓ Existe: index.html
+    12970 bytes
+  ✓ Existe: manifest.json
+    701 bytes
+  ✓ Existe: service-worker.js
+    3796 bytes
+  ✓ Existe: README.md
+    11295 bytes
+  ✓ Existe: src/supabase-client.js
+    1747 bytes
+  ✓ Existe: src/auth.js
+    1289 bytes
+  ✓ Existe: css/styles.css
+    3770 bytes
+  ✓ Existe: sql/001_schema.sql
+    9476 bytes
+  ✓ Existe: sql/002_seed_royal_enfield.sql
+    19232 bytes
+  ✓ Existe: assets/icon-192.png
+    838 bytes
+  ✓ Existe: assets/icon-512.png
+    2532 bytes
+  ✓ Pasta existe: src/
+  ✓ Pasta existe: css/
+  ✓ Pasta existe: sql/
+  ✓ Pasta existe: assets/
+
+======================================================================
+  2. SCHEMA SQL (banco real)
+======================================================================
+  ✓ Schema executa sem erro
+    OK
+  ✓ Tabela existe: modelos
+  ✓ Tabela existe: revisoes
+  ✓ Tabela existe: itens_checklist
+  ✓ Tabela existe: motos
+  ✓ Tabela existe: inspecoes
+  ✓ Tabela existe: inspecoes_itens
+  ✓ View existe: vw_checklist_completo
+  ✓ View existe: vw_motos_status
+  ✓ Trigger 'set_atualizado_em_motos' criado
+    set_atualizado_em_motos
+  ✓ RLS habilitado em: modelos
+  ✓ RLS habilitado em: revisoes
+  ✓ RLS habilitado em: itens_checklist
+  ✓ RLS habilitado em: motos
+  ✓ RLS habilitado em: inspecoes
+  ✓ RLS habilitado em: inspecoes_itens
+  ✓ Policies criadas (esperado >= 6)
+    encontradas: 6
+  ✓ Indices criados (esperado >= 8)
+    encontrados: 8
+
+======================================================================
+  3. SEED ROYAL ENFIELD
+======================================================================
+  ✓ Seed executa sem erro
+    OK
+  ✓ 10 modelos cadastrados
+    encontrados: 10
+  ✓ Modelo presente: Shotgun 650
+  ✓ Modelo presente: Super Meteor 650
+  ✓ Modelo presente: Interceptor 650
+  ✓ Modelo presente: Continental GT 650
+  ✓ Modelo presente: Classic 650
+  ✓ Modelo presente: Bear 650
+  ✓ Modelo presente: Hunter 350
+  ✓ Modelo presente: Classic 350
+  ✓ Modelo presente: Meteor 350
+  ✓ Modelo presente: Himalayan 450
+  ✓ 70 revisoes (10 modelos x 7 km)
+    encontradas: 70
+  ✓ Kms corretos (500/5k/10k/15k/20k/25k/30k)
+    encontrados: ['500', '5000', '10000', '15000', '20000', '25000', '30000']
+  ✓ Total de itens = 1300 (130 por modelo x 10)
+    encontrados: 1300
+  ✓ Itens em 500 km = 14
+    encontrados: 14
+  ✓ Itens em 5000 km = 16
+    encontrados: 16
+  ✓ Itens em 10000 km = 22
+    encontrados: 22
+  ✓ Itens em 15000 km = 16
+    encontrados: 16
+  ✓ Itens em 20000 km = 24
+    encontrados: 24
+  ✓ Itens em 25000 km = 16
+    encontrados: 16
+  ✓ Itens em 30000 km = 22
+    encontrados: 22
+  ✓ Categorias corretas presentes
+    presentes: ['Eletrica', 'Freios', 'Geral', 'Lubrificacao', 'Motor', 'Pneus', 'Suspensao', 'Transmissao']
+  ✓ Shotgun 650 / 500 km tem 14 itens
+    encontrados: 14
+  ✓ Volume de oleo 3,1 L referenciado na linha 650
+    encontrados: 42
+
+======================================================================
+  4. VIEWS FUNCIONAIS
+======================================================================
+  ✓ vw_checklist_completo retorna linhas
+    linhas: 1300
+  ✓ View retorna primeiros itens Shotgun 500 km
+    Motor|Troca de oleo do motor
+  ✓ vw_motos_status executavel (sem motos)
+    linhas: 0
+
+======================================================================
+  5. TRIGGER atualizado_em
+======================================================================
+  ✓ Insert popula criado_em e atualizado_em
+    criado=2026-06-23 11:16:40.209993+00
+  ✓ Trigger atualiza atualizado_em em UPDATE
+    antes: 2026-06-23 11:16:40 | depois: 2026-06-23 11:16:41
+
+======================================================================
+  6. PWA MANIFEST
+======================================================================
+  ✓ manifest.json eh JSON valido
+  ✓ Campo presente: name
+  ✓ Campo presente: short_name
+  ✓ Campo presente: start_url
+  ✓ Campo presente: display
+  ✓ Campo presente: background_color
+  ✓ Campo presente: theme_color
+  ✓ Campo presente: icons
+  ✓ display = 'standalone'
+  ✓ Pelo menos 2 icones (192 e 512)
+  ✓ Icone existe: assets/icon-192.png
+    838 bytes
+  ✓ Icone existe: assets/icon-512.png
+    2532 bytes
+
+======================================================================
+  7. SERVICE WORKER
+======================================================================
+  ✓ Service Worker eh JS valido (node --check)
+    OK
+  ✓ Listener de 'install'
+  ✓ Listener de 'activate'
+  ✓ Listener de 'fetch'
+  ✓ Estrategia network-first para Supabase
+  ✓ Cache name versionado
+  ✓ Skip waiting message handler
+
+======================================================================
+  8. HTML / JS / CSS
+======================================================================
+  ✓ HTML tem DOCTYPE
+  ✓ HTML tem viewport mobile
+  ✓ HTML referencia manifest
+  ✓ HTML referencia Supabase CDN
+  ✓ HTML referencia Tailwind
+  ✓ HTML tem tela de login
+  ✓ HTML tem dashboard
+  ✓ HTML registra Service Worker
+  ✓ HTML chama fazerLogin
+  ✓ src/supabase-client.js eh JS valido
+    OK
+  ✓ src/auth.js eh JS valido
+    OK
+  ✓ supabase-client tem placeholder SUPABASE_URL
+    pronto para edicao do usuario
+  ✓ auth.js define fazerLogin
+  ✓ auth.js define cadastrarUsuario
+  ✓ auth.js define recuperarSessao
+  ✓ CSS define variaveis de cor
+  ✓ CSS tem classes de status (.btn-status)
+  ✓ CSS tem canvas-assinatura
+  ✓ CSS tem viewport mobile (16px input)
+
+======================================================================
+  9. README
+======================================================================
+  ✓ README contem '## Estrutura'
+  ✓ README contem '## Setup'
+  ✓ README contem '## Roadmap'
+  ✓ README contem 'Fase 0'
+  ✓ README contem 'Fase 1'
+  ✓ README contem 'Fase 2'
+  ✓ README contem 'Fase 3'
+  ✓ README contem 'Supabase'
+  ✓ README contem 'GitHub Pages'
+
+======================================================================
+  RESUMO
+======================================================================
+  Total : 110
+  Passou: 110
+
+  Sucesso: 100.0%
+
+----------------------------------------
+
+REVISAO-MOTO :: Testes da Fase 1
+Modo: LOCAL
+
+======================================================================
+  FASE 1 - Modo LOCAL (Postgres)
+======================================================================
+  OK   modelos = 10
+       encontrados: 10
+  OK   revisoes = 70
+       encontradas: 70
+  OK   itens_checklist = 1300
+       encontrados: 1300
+  OK   Modelo: Shotgun 650
+  OK   Modelo: Super Meteor 650
+  OK   Modelo: Interceptor 650
+  OK   Modelo: Continental GT 650
+  OK   Modelo: Classic 650
+  OK   Modelo: Bear 650
+  OK   Modelo: Hunter 350
+  OK   Modelo: Classic 350
+  OK   Modelo: Meteor 350
+  OK   Modelo: Himalayan 450
+  OK   Shotgun 650 / 500 km = 14 itens
+       encontrados: 14
+  OK   Shotgun 650 / 5000 km = 16 itens
+       encontrados: 16
+  OK   Shotgun 650 / 10000 km = 22 itens
+       encontrados: 22
+  OK   Shotgun 650 / 15000 km = 16 itens
+       encontrados: 16
+  OK   Shotgun 650 / 20000 km = 24 itens
+       encontrados: 24
+  OK   Shotgun 650 / 25000 km = 16 itens
+       encontrados: 16
+  OK   Shotgun 650 / 30000 km = 22 itens
+       encontrados: 22
+  OK   View existe: vw_checklist_completo
+  OK   View existe: vw_motos_status
+  OK   RLS policies >= 6
+       encontradas: 6
+  OK   Indices >= 8
+       encontrados: 8
+
+======================================================================
+  RESUMO
+======================================================================
+  Total : 24
+  Passou: 24
+
+  Sucesso: 100.0%
+
+==========================================
+  TODOS OS TESTES PASSARAM (Fase 0 + 1)
+==========================================

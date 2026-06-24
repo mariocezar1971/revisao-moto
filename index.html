@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#dc2626">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>Revisão Moto</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./assets/icon-192.png">
+    <link rel="apple-touch-icon" href="./assets/icon-192.png">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!-- TELA DE LOGIN                                                  -->
+    <!-- ============================================================ -->
+    <div id="tela-login" class="min-h-screen flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="inline-block bg-red-600 text-white rounded-full p-4 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">Revisão Moto</h1>
+                <p class="text-slate-500 text-sm mt-1">Checklist de manutenção</p>
+            </div>
+
+            <form id="form-login" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                    <input type="email" id="email" required
+                           class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                           placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                    <input type="password" id="senha" required
+                           class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                           placeholder="••••••••">
+                </div>
+                <button type="submit" id="btn-login"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2">
+                    <span>Entrar</span>
+                </button>
+                <p id="erro-login" class="text-red-600 text-sm text-center hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- DASHBOARD (apos login)                                          -->
+    <!-- ============================================================ -->
+    <div id="tela-dashboard" class="hidden">
+        <header class="header-app p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-lg font-bold">Revisão Moto</h1>
+                    <p id="dash-usuario" class="text-xs text-slate-300"></p>
+                </div>
+                <button onclick="logout()" class="text-sm text-slate-300 hover:text-white">
+                    Sair
+                </button>
+            </div>
+        </header>
+
+        <main class="p-4 max-w-2xl mx-auto">
+            <!-- Status de conexao -->
+            <div id="status-conexao"></div>
+
+            <!-- Acoes rapidas -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <a href="./inspecao.html"
+                   class="bg-red-600 hover:bg-red-700 text-white rounded-xl p-5 text-center font-semibold shadow-md transition">
+                    <div class="text-3xl mb-2">+</div>
+                    <div>Nova Inspeção</div>
+                </a>
+                <a href="./historico.html"
+                   class="bg-white hover:bg-slate-50 text-slate-900 rounded-xl p-5 text-center font-semibold shadow-md transition border border-slate-200">
+                    <div class="text-3xl mb-2">📋</div>
+                    <div>Histórico</div>
+                </a>
+            </div>
+
+            <a href="./admin.html"
+               class="block bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl p-4 text-center font-medium mb-6 transition">
+                Cadastrar/Editar Motos
+            </a>
+
+            <!-- Estatisticas -->
+            <div class="bg-white rounded-xl p-5 shadow-md">
+                <h2 class="font-semibold text-slate-900 mb-4">Resumo</h2>
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                        <div id="stat-motos" class="text-2xl font-bold text-red-600">-</div>
+                        <div class="text-xs text-slate-500">Motos</div>
+                    </div>
+                    <div>
+                        <div id="stat-inspecoes" class="text-2xl font-bold text-slate-900">-</div>
+                        <div class="text-xs text-slate-500">Inspeções</div>
+                    </div>
+                    <div>
+                        <div id="stat-pendentes" class="text-2xl font-bold text-amber-600">-</div>
+                        <div class="text-xs text-slate-500">Em andamento</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ultimas inspecoes -->
+            <div class="mt-6">
+                <h2 class="font-semibold text-slate-900 mb-3">Últimas inspeções</h2>
+                <div id="lista-ultimas" class="space-y-2">
+                    <p class="text-slate-500 text-sm">Carregando...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPTS                                                        -->
+    <!-- ============================================================ -->
+    <script src="./src/supabase-client.js"></script>
+    <script src="./src/auth.js"></script>
+    <script>
+        // ================================================================
+        // BOOT
+        // ================================================================
+        async function boot() {
+            // Registra service worker
+            if ('serviceWorker' in navigator) {
+                try {
+                    await navigator.serviceWorker.register('./service-worker.js');
+                } catch (e) {
+                    console.warn('SW falhou:', e);
+                }
+            }
+
+            // Verifica sessao
+            const sessao = await recuperarSessao();
+            if (sessao) {
+                mostrarDashboard(sessao.user);
+            } else {
+                mostrarLogin();
+            }
+
+            // Monitora conexao
+            window.addEventListener('online', atualizarConexao);
+            window.addEventListener('offline', atualizarConexao);
+            atualizarConexao();
+        }
+
+        function mostrarLogin() {
+            document.getElementById('tela-login').classList.remove('hidden');
+            document.getElementById('tela-dashboard').classList.add('hidden');
+        }
+
+        async function mostrarDashboard(usuario) {
+            document.getElementById('tela-login').classList.add('hidden');
+            document.getElementById('tela-dashboard').classList.remove('hidden');
+            document.getElementById('dash-usuario').textContent = usuario.email;
+            await carregarEstatisticas();
+            await carregarUltimasInspecoes();
+        }
+
+        function atualizarConexao() {
+            const div = document.getElementById('status-conexao');
+            if (!navigator.onLine) {
+                div.innerHTML = '<div class="offline-banner rounded-lg mb-4">⚠ Offline - alterações sincronizam quando conectar</div>';
+            } else {
+                div.innerHTML = '';
+            }
+        }
+
+        // ================================================================
+        // LOGIN
+        // ================================================================
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const btn = document.getElementById('btn-login');
+            const erroDiv = document.getElementById('erro-login');
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div>';
+            erroDiv.classList.add('hidden');
+
+            const resultado = await fazerLogin(email, senha);
+
+            if (resultado.sucesso) {
+                mostrarDashboard(resultado.usuario);
+            } else {
+                erroDiv.textContent = resultado.erro || 'Erro ao fazer login';
+                erroDiv.classList.remove('hidden');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<span>Entrar</span>';
+        });
+
+        // ================================================================
+        // DASHBOARD - estatisticas
+        // ================================================================
+        async function carregarEstatisticas() {
+            try {
+                const { count: motos } = await window.sb.from('motos').select('*', { count: 'exact', head: true });
+                const { count: inspecoes } = await window.sb.from('inspecoes').select('*', { count: 'exact', head: true });
+                const { count: pendentes } = await window.sb.from('inspecoes').select('*', { count: 'exact', head: true }).eq('status', 'em_andamento');
+
+                document.getElementById('stat-motos').textContent = motos ?? 0;
+                document.getElementById('stat-inspecoes').textContent = inspecoes ?? 0;
+                document.getElementById('stat-pendentes').textContent = pendentes ?? 0;
+            } catch (e) {
+                console.warn('Erro ao carregar stats:', e);
+            }
+        }
+
+        async function carregarUltimasInspecoes() {
+            const lista = document.getElementById('lista-ultimas');
+            try {
+                const { data, error } = await window.sb
+                    .from('inspecoes')
+                    .select('id, data_inicio, status, km_registrado, motos(placa, modelos(nome))')
+                    .order('data_inicio', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    lista.innerHTML = '<p class="text-slate-500 text-sm">Nenhuma inspeção registrada ainda.</p>';
+                    return;
+                }
+
+                lista.innerHTML = data.map((i) => {
+                    const placa = i.motos?.placa || '?';
+                    const modelo = i.motos?.modelos?.nome || '?';
+                    const data = new Date(i.data_inicio).toLocaleString('pt-BR');
+                    const statusCor = i.status === 'finalizada' ? 'text-green-700 bg-green-100' :
+                                      i.status === 'em_andamento' ? 'text-amber-700 bg-amber-100' :
+                                      'text-slate-700 bg-slate-100';
+                    return `
+                        <div class="bg-white rounded-lg p-3 shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-semibold text-slate-900">${placa} - ${modelo}</div>
+                                    <div class="text-xs text-slate-500">${data} · ${i.km_registrado} km</div>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full ${statusCor}">${i.status}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                lista.innerHTML = '<p class="text-red-600 text-sm">Erro ao carregar histórico.</p>';
+                console.error(e);
+            }
+        }
+
+        // ================================================================
+        // START
+        // ================================================================
+        boot();
+    </script>
+</body>
+</html>

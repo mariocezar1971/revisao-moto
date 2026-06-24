@@ -1,0 +1,23 @@
+[
+  {
+    "email": "mario.cezar@ifes.edu.br",
+    "senha": "TrocarApos1Login!",
+    "nome_completo": "Mario Cezar dos Santos Junior",
+    "perfil": "admin",
+    "telefone": "(27) 99999-0001"
+  },
+  {
+    "email": "mecanico1@oficina.com.br",
+    "senha": "TrocarApos1Login!",
+    "nome_completo": "Joao da Silva",
+    "perfil": "mecanico",
+    "telefone": "(27) 99999-0002"
+  },
+  {
+    "email": "mecanico2@oficina.com.br",
+    "senha": "TrocarApos1Login!",
+    "nome_completo": "Pedro Souza",
+    "perfil": "mecanico",
+    "telefone": "(27) 99999-0003"
+  }
+]
