@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#dc2626">
+    <title>Inspeção - Revisão Moto</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./assets/icon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- HEADER                                                          -->
+<!-- ============================================================ -->
+<header class="header-app p-4">
+    <div class="flex items-center justify-between max-w-2xl mx-auto">
+        <div class="flex items-center gap-3">
+            <a href="./index.html" id="btn-voltar" class="text-slate-300 hover:text-white text-xl leading-none">←</a>
+            <h1 id="header-titulo" class="text-lg font-bold">Nova inspeção</h1>
+        </div>
+        <div id="header-info" class="text-xs text-slate-300 text-right"></div>
+    </div>
+    <div id="barra-progresso" class="mt-3 hidden">
+        <div class="progresso-bar"><div id="barra-fill" class="progresso-bar-fill" style="width: 0%"></div></div>
+        <div class="flex justify-between mt-1 text-xs text-slate-300">
+            <span id="progresso-texto">0 de 0</span>
+            <span id="progresso-pct">0%</span>
+        </div>
+    </div>
+</header>
+
+<!-- ============================================================ -->
+<!-- TELA 1: SELECAO DE MOTO                                         -->
+<!-- ============================================================ -->
+<main id="view-selecao" class="p-4 max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-2">Buscar moto por placa</label>
+        <input type="text" id="input-busca-placa" placeholder="Digite pelo menos 2 caracteres"
+               class="w-full px-3 py-2.5 border border-slate-300 rounded-lg uppercase"
+               autocomplete="off"
+               oninput="buscarMotos(this.value)">
+        <div id="lista-sugestoes" class="mt-2 space-y-2"></div>
+    </div>
+
+    <div id="moto-selecionada" class="bg-white rounded-xl p-4 shadow-sm mb-4 hidden">
+        <h2 class="font-bold text-slate-900 mb-3">Moto selecionada</h2>
+        <div id="moto-detalhes" class="space-y-1 text-sm"></div>
+
+        <hr class="my-4">
+
+        <h3 class="font-semibold text-slate-900 mb-2">Revisão</h3>
+        <div id="revisao-sugerida" class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 hidden">
+            <p class="text-xs text-red-600 font-semibold mb-1">SUGESTÃO AUTOMÁTICA</p>
+            <p id="sugestao-texto" class="text-slate-900"></p>
+            <p id="sugestao-motivo" class="text-xs text-slate-600 mt-1"></p>
+        </div>
+
+        <label class="block text-sm font-medium text-slate-700 mb-1">Revisão a executar</label>
+        <select id="select-revisao" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white mb-3">
+            <option value="">Carregando...</option>
+        </select>
+
+        <label class="block text-sm font-medium text-slate-700 mb-1">Km atual (confirme ou ajuste)</label>
+        <input type="number" id="input-km" min="0" inputmode="numeric"
+               class="w-full px-3 py-2.5 border border-slate-300 rounded-lg mb-4">
+
+        <button onclick="iniciarInspecao()" id="btn-iniciar"
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg">
+            Iniciar inspeção
+        </button>
+    </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- TELA 2: EXECUCAO DO CHECKLIST                                   -->
+<!-- ============================================================ -->
+<main id="view-execucao" class="p-4 max-w-2xl mx-auto pb-24 hidden">
+    <div id="lista-itens"></div>
+
+    <!-- Footer sticky com botao finalizar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 shadow-lg">
+        <div class="max-w-2xl mx-auto flex gap-2">
+            <button onclick="pedirCancelamento()" class="px-4 py-2.5 border border-slate-300 rounded-lg font-medium">
+                Cancelar
+            </button>
+            <button onclick="prepararFinalizacao()" id="btn-finalizar"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg">
+                Finalizar inspeção
+            </button>
+        </div>
+        <div id="autosave-status" class="text-center text-xs text-slate-500 mt-1 h-4"></div>
+    </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- TELA 3: FINALIZACAO                                             -->
+<!-- ============================================================ -->
+<main id="view-finalizacao" class="p-4 max-w-2xl mx-auto hidden">
+    <div class="bg-white rounded-xl p-5 shadow-sm mb-4">
+        <h2 class="font-bold text-slate-900 mb-4">Resumo da inspeção</h2>
+        <div id="resumo-detalhes" class="grid grid-cols-3 gap-3 text-center mb-4">
+            <div><div id="resumo-ok" class="text-2xl font-bold text-green-600">0</div><div class="text-xs text-slate-500">OK</div></div>
+            <div><div id="resumo-nok" class="text-2xl font-bold text-red-600">0</div><div class="text-xs text-slate-500">N-OK</div></div>
+            <div><div id="resumo-na" class="text-2xl font-bold text-slate-600">0</div><div class="text-xs text-slate-500">N/A</div></div>
+        </div>
+
+        <div id="alerta-pendentes" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 hidden">
+            <p class="text-sm text-amber-800" id="pendentes-texto"></p>
+        </div>
+
+        <label class="block text-sm font-medium text-slate-700 mb-1">Observações gerais (opcional)</label>
+        <textarea id="input-obs-gerais" rows="3" maxlength="1000"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-4"
+                  placeholder="Notas sobre a inspeção como um todo..."></textarea>
+
+        <div class="flex gap-2">
+            <button onclick="voltarParaExecucao()"
+                    class="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg font-medium">
+                ← Voltar
+            </button>
+            <button onclick="confirmarFinalizacao()" id="btn-confirmar-fim"
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg">
+                Confirmar e finalizar
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- SCRIPTS                                                          -->
+<!-- ============================================================ -->
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/camera.js"></script>
+<script src="./src/inspecao.js"></script>
+<script>
+// ================================================================
+// UI LOGIC
+// ================================================================
+let debounceBusca = null;
+
+async function boot() {
+    await exigirLogin();
+    // Se veio com moto_id na URL, carrega direto
+    const params = new URLSearchParams(window.location.search);
+    const motoId = params.get('moto_id');
+    if (motoId) selecionarMoto(parseInt(motoId));
+}
+
+function toast(mensagem, tipo = 'sucesso') {
+    const el = document.createElement('div');
+    el.className = `toast ${tipo}`;
+    el.textContent = mensagem;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+function autosaveStatus(texto, tipo = 'info') {
+    const el = document.getElementById('autosave-status');
+    const cor = tipo === 'salvando' ? 'text-amber-600' : tipo === 'salvo' ? 'text-green-600' : tipo === 'erro' ? 'text-red-600' : 'text-slate-500';
+    el.className = `text-center text-xs mt-1 h-4 ${cor}`;
+    el.textContent = texto;
+    if (tipo === 'salvo') setTimeout(() => { if (el.textContent === texto) el.textContent = ''; }, 1500);
+}
+
+// ================================================================
+// TELA 1: BUSCA E SELECAO DE MOTO
+// ================================================================
+function buscarMotos(termo) {
+    if (debounceBusca) clearTimeout(debounceBusca);
+    debounceBusca = setTimeout(async () => {
+        const resultados = await window.buscarMotosPorPlaca(termo);
+        renderSugestoes(resultados);
+    }, 250);
+}
+
+function renderSugestoes(motos) {
+    const lista = document.getElementById('lista-sugestoes');
+    if (!motos.length) { lista.innerHTML = ''; return; }
+    lista.innerHTML = motos.map(m => `
+        <div onclick="selecionarMoto(${m.id})" class="cursor-pointer bg-slate-50 hover:bg-slate-100 rounded-lg p-3 border border-slate-200">
+            <div class="font-semibold text-slate-900">${m.placa}</div>
+            <div class="text-xs text-slate-600">${m.modelo || '?'} · ${(m.km_atual || 0).toLocaleString('pt-BR')} km${m.proprietario ? ' · ' + m.proprietario : ''}</div>
+        </div>`).join('');
+}
+
+async function selecionarMoto(motoId) {
+    try {
+        const moto = await window.detalharMoto(motoId);
+        window.estadoInspecao.moto = moto;
+
+        // Preenche detalhes
+        document.getElementById('moto-detalhes').innerHTML = `
+            <div><span class="text-slate-500">Placa:</span> <strong>${moto.placa}</strong></div>
+            <div><span class="text-slate-500">Modelo:</span> ${moto.modelo}${moto.ano ? ' · ' + moto.ano : ''}</div>
+            <div><span class="text-slate-500">Proprietário:</span> ${moto.proprietario || '?'}</div>
+            <div><span class="text-slate-500">Km atual:</span> ${(moto.km_atual || 0).toLocaleString('pt-BR')}</div>
+            ${moto.ultima_inspecao ? `<div><span class="text-slate-500">Última inspeção:</span> ${new Date(moto.ultima_inspecao).toLocaleDateString('pt-BR')} (${(moto.km_ultima_inspecao || 0).toLocaleString('pt-BR')} km)</div>` : '<div class="text-amber-600 text-xs">⚠ Nenhuma inspeção prévia</div>'}
+        `;
+        document.getElementById('input-km').value = moto.km_atual || 0;
+
+        // Popula select de revisoes do modelo
+        const revisoes = await window.listarRevisoesDoModelo(moto.modelo_id);
+        const sel = document.getElementById('select-revisao');
+        sel.innerHTML = revisoes.map(r => `<option value="${r.id}">${r.km.toLocaleString('pt-BR')} km - ${r.tipo}</option>`).join('');
+
+        // Sugere revisao
+        try {
+            const sugestao = await window.sugerirRevisao(motoId);
+            if (sugestao) {
+                document.getElementById('revisao-sugerida').classList.remove('hidden');
+                document.getElementById('sugestao-texto').textContent = `${sugestao.km_revisao.toLocaleString('pt-BR')} km (${sugestao.tipo})`;
+                document.getElementById('sugestao-motivo').textContent = sugestao.motivo;
+                sel.value = sugestao.revisao_id;
+            }
+        } catch (e) { console.warn('Sem sugestao:', e); }
+
+        document.getElementById('moto-selecionada').classList.remove('hidden');
+        document.getElementById('lista-sugestoes').innerHTML = '';
+        document.getElementById('input-busca-placa').value = moto.placa;
+    } catch (e) {
+        console.error(e);
+        toast('Erro ao carregar moto', 'erro');
+    }
+}
+
+// ================================================================
+// INICIAR INSPECAO
+// ================================================================
+async function iniciarInspecao() {
+    const btn = document.getElementById('btn-iniciar');
+    btn.disabled = true;
+    btn.textContent = 'Iniciando...';
+    try {
+        const revisaoId = parseInt(document.getElementById('select-revisao').value);
+        const km = parseInt(document.getElementById('input-km').value);
+        if (!revisaoId || !Number.isFinite(km)) throw new Error('Preencha revisão e km');
+
+        const usuario = await getUsuarioAtual();
+        const nomeMec = usuario.user_metadata?.nome_completo || usuario.email;
+
+        // Verifica se ja existe em andamento para esta moto
+        const existente = await window.retomarInspecaoEmAndamento(window.estadoInspecao.moto.id);
+        let inspecao;
+        if (existente) {
+            if (!confirm(`Já existe inspeção em andamento para ${window.estadoInspecao.moto.placa}. Continuar de onde parou?`)) {
+                await window.cancelarInspecao(existente.id);
+                inspecao = await window.criarInspecao({
+                    moto_id: window.estadoInspecao.moto.id,
+                    revisao_id: revisaoId,
+                    km_registrado: km,
+                    mecanico_id: usuario.id,
+                    mecanico_nome: nomeMec
+                });
+            } else {
+                inspecao = existente;
+            }
+        } else {
+            inspecao = await window.criarInspecao({
+                moto_id: window.estadoInspecao.moto.id,
+                revisao_id: revisaoId,
+                km_registrado: km,
+                mecanico_id: usuario.id,
+                mecanico_nome: nomeMec
+            });
+        }
+        window.estadoInspecao.inspecao = inspecao;
+        window.estadoInspecao.revisao = { id: revisaoId };
+
+        await carregarChecklist();
+        mostrarView('view-execucao');
+        atualizarHeader();
+    } catch (e) {
+        console.error(e);
+        toast(e.message || 'Erro ao iniciar', 'erro');
+        btn.disabled = false;
+        btn.textContent = 'Iniciar inspeção';
+    }
+}
+
+// ================================================================
+// TELA 2: CHECKLIST
+// ================================================================
+async function carregarChecklist() {
+    const [itens, respostas] = await Promise.all([
+        window.carregarItensDaRevisao(window.estadoInspecao.revisao.id),
+        window.carregarRespostasSalvas(window.estadoInspecao.inspecao.id)
+    ]);
+    window.estadoInspecao.itens = itens;
+    window.estadoInspecao.respostas = {};
+    for (const r of Object.values(respostas)) {
+        window.estadoInspecao.respostas[r.item_id] = {
+            status: r.status,
+            valor_medido: r.valor_medido,
+            observacao: r.observacao,
+            foto_path: r.foto_url
+        };
+    }
+    renderChecklist();
+    atualizarProgresso();
+}
+
+function renderChecklist() {
+    const grupos = window.agruparPorCategoria(window.estadoInspecao.itens);
+    const lista = document.getElementById('lista-itens');
+    const partes = [];
+    for (const cat of Object.keys(grupos)) {
+        partes.push(`<div class="categoria-divider">${cat}</div>`);
+        for (const item of grupos[cat]) {
+            partes.push(renderItem(item));
+        }
+    }
+    lista.innerHTML = partes.join('');
+}
+
+function renderItem(item) {
+    const r = window.estadoInspecao.respostas[item.id] || {};
+    const estado = r.status ? (r.status === 'nao_ok' ? 'problema' : 'completo') : 'pendente';
+    const idBase = `item-${item.id}`;
+    return `
+    <div class="card-item ${estado}" id="card-${item.id}">
+        <div class="text-sm font-medium text-slate-900">${item.descricao}${item.obrigatorio ? ' <span class="text-red-600" title="Obrigatório">*</span>' : ''}</div>
+        ${item.valor_referencia ? `<div class="text-xs text-slate-500 mt-0.5">Ref: ${item.valor_referencia}</div>` : ''}
+
+        <div class="grid grid-cols-3 gap-2 mt-3">
+            <button onclick="marcarStatus(${item.id}, 'ok')" class="btn-status ok${r.status==='ok'?' active':''}" id="${idBase}-ok">OK</button>
+            <button onclick="marcarStatus(${item.id}, 'nao_ok')" class="btn-status nao-ok${r.status==='nao_ok'?' active':''}" id="${idBase}-nok">N-OK</button>
+            <button onclick="marcarStatus(${item.id}, 'na')" class="btn-status na${r.status==='na'?' active':''}" id="${idBase}-na">N/A</button>
+        </div>
+
+        ${item.exige_medicao ? `
+        <div class="mt-2">
+            <label class="text-xs text-slate-600">Valor medido</label>
+            <input type="text" id="${idBase}-medida" value="${r.valor_medido || ''}"
+                   oninput="marcarMedida(${item.id}, this.value)"
+                   class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm"
+                   placeholder="ex: 0,75 mm">
+        </div>` : ''}
+
+        <div class="mt-2">
+            <input type="text" id="${idBase}-obs" value="${r.observacao || ''}"
+                   oninput="marcarObs(${item.id}, this.value)"
+                   class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm"
+                   placeholder="Observação (opcional)">
+        </div>
+
+        ${item.exige_foto ? `
+        <div class="mt-2">
+            <button onclick="capturarFotoItem(${item.id})" id="${idBase}-foto-btn"
+                    class="text-xs px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium">
+                ${r.foto_path ? '📷 Refazer foto' : '📷 Tirar foto'}
+            </button>
+            <span id="${idBase}-foto-status" class="text-xs ml-2">${r.foto_path ? '✓ enviada' : ''}</span>
+        </div>` : ''}
+    </div>`;
+}
+
+function marcarStatus(itemId, status) {
+    document.querySelectorAll(`[id^="item-${itemId}-"]`).forEach(el => {
+        if (el.id.startsWith(`item-${itemId}-ok`) || el.id.startsWith(`item-${itemId}-nok`) || el.id.startsWith(`item-${itemId}-na`)) {
+            el.classList.remove('active');
+        }
+    });
+    const suffix = status === 'ok' ? 'ok' : status === 'nao_ok' ? 'nok' : 'na';
+    document.getElementById(`item-${itemId}-${suffix}`).classList.add('active');
+
+    autosaveStatus('salvando…', 'salvando');
+    window.agendarSalvamento(itemId, { status }, {
+        onSalvo: () => { autosaveStatus('salvo ✓', 'salvo'); atualizarProgresso(); atualizarCard(itemId); },
+        onErro: () => autosaveStatus('erro ao salvar', 'erro')
+    });
+}
+
+function marcarMedida(itemId, valor) {
+    autosaveStatus('salvando…', 'salvando');
+    window.agendarSalvamento(itemId, { valor_medido: valor }, {
+        onSalvo: () => autosaveStatus('salvo ✓', 'salvo'),
+        onErro: () => autosaveStatus('erro ao salvar', 'erro')
+    });
+}
+
+function marcarObs(itemId, valor) {
+    autosaveStatus('salvando…', 'salvando');
+    window.agendarSalvamento(itemId, { observacao: valor }, {
+        onSalvo: () => autosaveStatus('salvo ✓', 'salvo'),
+        onErro: () => autosaveStatus('erro ao salvar', 'erro')
+    });
+}
+
+async function capturarFotoItem(itemId) {
+    const statusEl = document.getElementById(`item-${itemId}-foto-status`);
+    const path = await window.tirarFoto(
+        window.estadoInspecao.inspecao.id,
+        itemId,
+        {
+            onCapturando: () => { statusEl.textContent = 'abrindo câmera…'; },
+            onComprimindo: () => { statusEl.textContent = 'processando…'; },
+            onEnviando: (kb) => { statusEl.textContent = `enviando ${kb}KB…`; },
+            onSucesso: (p, kb) => { statusEl.textContent = `✓ ${kb}KB`; },
+            onErro: (e) => { statusEl.textContent = '✗ erro'; toast('Erro na foto', 'erro'); }
+        }
+    );
+    if (path) {
+        window.agendarSalvamento(itemId, { foto_path: path }, {
+            onSalvo: () => atualizarProgresso()
+        });
+    }
+}
+
+function atualizarCard(itemId) {
+    const r = window.estadoInspecao.respostas[itemId] || {};
+    const card = document.getElementById(`card-${itemId}`);
+    if (!card) return;
+    card.classList.remove('completo','pendente','problema');
+    if (!r.status) card.classList.add('pendente');
+    else if (r.status === 'nao_ok') card.classList.add('problema');
+    else card.classList.add('completo');
+}
+
+function atualizarProgresso() {
+    const p = window.calcularProgressoLocal();
+    document.getElementById('progresso-texto').textContent = `${p.preenchidos} de ${p.total}`;
+    document.getElementById('progresso-pct').textContent = `${p.pct}%`;
+    document.getElementById('barra-fill').style.width = `${p.pct}%`;
+}
+
+function atualizarHeader() {
+    const m = window.estadoInspecao.moto;
+    document.getElementById('header-titulo').textContent = m.placa;
+    document.getElementById('header-info').innerHTML = `${m.modelo}<br><span class="text-slate-400">${window.estadoInspecao.inspecao.km_registrado.toLocaleString('pt-BR')} km</span>`;
+    document.getElementById('barra-progresso').classList.remove('hidden');
+}
+
+function mostrarView(id) {
+    ['view-selecao','view-execucao','view-finalizacao'].forEach(v => {
+        document.getElementById(v).classList.toggle('hidden', v !== id);
+    });
+    window.scrollTo(0, 0);
+}
+
+// ================================================================
+// TELA 3: FINALIZACAO
+// ================================================================
+async function prepararFinalizacao() {
+    await window.flushSalvamentos();
+    const p = await window.calcularProgresso(window.estadoInspecao.inspecao.id);
+    if (!p) { toast('Erro ao carregar progresso', 'erro'); return; }
+
+    document.getElementById('resumo-ok').textContent = p.ok_count || 0;
+    document.getElementById('resumo-nok').textContent = p.nao_ok_count || 0;
+    document.getElementById('resumo-na').textContent = p.na_count || 0;
+
+    const validacao = await window.podeFinalizarInspecao(window.estadoInspecao.inspecao.id);
+    const alertaEl = document.getElementById('alerta-pendentes');
+    const btnFim = document.getElementById('btn-confirmar-fim');
+    if (validacao && !validacao.pode_finalizar) {
+        alertaEl.classList.remove('hidden');
+        document.getElementById('pendentes-texto').textContent = validacao.motivo;
+        btnFim.disabled = true;
+        btnFim.classList.add('opacity-50');
+    } else {
+        alertaEl.classList.add('hidden');
+        btnFim.disabled = false;
+        btnFim.classList.remove('opacity-50');
+    }
+    mostrarView('view-finalizacao');
+}
+
+function voltarParaExecucao() { mostrarView('view-execucao'); }
+
+async function confirmarFinalizacao() {
+    const btn = document.getElementById('btn-confirmar-fim');
+    btn.disabled = true; btn.textContent = 'Finalizando...';
+    try {
+        const obs = document.getElementById('input-obs-gerais').value.trim();
+        await window.finalizarInspecao(window.estadoInspecao.inspecao.id, obs);
+        toast('Inspeção finalizada!');
+        setTimeout(() => window.location.href = './index.html', 1200);
+    } catch (e) {
+        toast(e.message || 'Erro ao finalizar', 'erro');
+        btn.disabled = false; btn.textContent = 'Confirmar e finalizar';
+    }
+}
+
+async function pedirCancelamento() {
+    if (!confirm('Cancelar esta inspeção? Os dados salvos serão mantidos como "cancelada".')) return;
+    try {
+        await window.flushSalvamentos();
+        await window.cancelarInspecao(window.estadoInspecao.inspecao.id);
+        toast('Inspeção cancelada');
+        setTimeout(() => window.location.href = './index.html', 800);
+    } catch (e) {
+        toast('Erro ao cancelar', 'erro');
+    }
+}
+
+boot();
+</script>
+</body>
+</html>
