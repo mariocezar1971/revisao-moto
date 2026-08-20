@@ -108,12 +108,29 @@ PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test
     python3 "$RAIZ/tests/test_fase4.py"
 EXIT_F4=$?
 
-EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 ))
+echo ""
+echo "----------------------------------------"
+echo ""
+
+# Fase 5 (Historico e Relatorios - reusa banco)
+PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test \
+    python3 "$RAIZ/tests/test_fase5.py"
+EXIT_F5=$?
+
+echo ""
+echo "----------------------------------------"
+echo ""
+
+# Fase 6 (Offline - nao requer banco)
+python3 "$RAIZ/tests/test_fase6.py"
+EXIT_F6=$?
+
+EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 ))
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then
     echo "=========================================="
-    echo "  TODOS OS TESTES PASSARAM (Fase 0 + 1 + 2 + 3 + 4)"
+    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 6)"
     echo "=========================================="
 else
     echo "=========================================="
@@ -123,6 +140,8 @@ else
     echo "  Fase 2 exit: $EXIT_F2"
     echo "  Fase 3 exit: $EXIT_F3"
     echo "  Fase 4 exit: $EXIT_F4"
+    echo "  Fase 5 exit: $EXIT_F5"
+    echo "  Fase 6 exit: $EXIT_F6"
     echo "=========================================="
 fi
 

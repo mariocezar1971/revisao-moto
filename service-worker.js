@@ -3,22 +3,33 @@
 // Estrategia: cache-first para app shell, network-first para Supabase
 // =====================================================================
 
-const CACHE_VERSION = 'v0.1.0';
+const CACHE_VERSION = 'v0.6.0';
 const CACHE_NAME = `revisao-moto-${CACHE_VERSION}`;
 
 // App shell - arquivos essenciais para funcionar offline
 const APP_SHELL = [
   './',
   './index.html',
+  './admin.html',
+  './inspecao.html',
+  './historico.html',
   './manifest.json',
   './css/styles.css',
   './src/supabase-client.js',
   './src/auth.js',
+  './src/camera.js',
+  './src/inspecao.js',
+  './src/assinatura.js',
+  './src/pdf.js',
+  './src/relatorios.js',
+  './src/offline.js',
+  './src/status_offline.js',
   './assets/icon-192.png',
   './assets/icon-512.png',
   // CDNs essenciais
   'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js'
 ];
 
 // =====================================================================

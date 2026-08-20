@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#dc2626">
+    <title>Histórico - Revisão Moto</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./assets/icon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="./css/styles.css">
+    <style>
+      .status-em_dia    { background:#dcfce7; color:#166534; }
+      .status-proxima   { background:#fef3c7; color:#92400e; }
+      .status-atrasada  { background:#fee2e2; color:#991b1b; }
+      .status-sem_historico { background:#e2e8f0; color:#475569; }
+      .tab-btn.active { border-bottom: 2px solid #dc2626; color:#dc2626; font-weight:600; }
+      .chart-bar { transition: height .3s; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header-app p-4">
+  <div class="flex items-center justify-between max-w-4xl mx-auto">
+    <div class="flex items-center gap-3">
+      <a href="./index.html" class="text-slate-300 hover:text-white text-xl leading-none">←</a>
+      <h1 class="text-lg font-bold">Histórico e Relatórios</h1>
+    </div>
+    <div id="header-info" class="text-xs text-slate-300"></div>
+  </div>
+
+  <!-- TABS -->
+  <nav class="mt-3 max-w-4xl mx-auto flex gap-1 text-sm">
+    <button onclick="mostrarTab('tab-lista')" id="btn-tab-lista" class="tab-btn px-3 py-2 text-slate-300 active">
+      🏍 Motos
+    </button>
+    <button onclick="mostrarTab('tab-inspecoes')" id="btn-tab-inspecoes" class="tab-btn px-3 py-2 text-slate-300">
+      📋 Inspeções
+    </button>
+    <button onclick="mostrarTab('tab-relatorios')" id="btn-tab-relatorios" class="tab-btn px-3 py-2 text-slate-300">
+      📊 Relatórios
+    </button>
+  </nav>
+</header>
+
+<!-- ============================================================ -->
+<!-- TAB 1: LISTA DE MOTOS COM STATUS DE REVISAO                    -->
+<!-- ============================================================ -->
+<main id="tab-lista" class="p-4 max-w-4xl mx-auto">
+  <div class="bg-white rounded-xl p-3 shadow-sm mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <input type="text" id="filtro-placa-lista" placeholder="Filtrar por placa"
+             class="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+             oninput="filtrarLista()">
+      <select id="filtro-status-lista" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              onchange="filtrarLista()">
+        <option value="">Todos os status</option>
+        <option value="em_dia">Em dia</option>
+        <option value="proxima">Próxima da revisão</option>
+        <option value="atrasada">Atrasada</option>
+        <option value="sem_historico">Sem histórico</option>
+      </select>
+      <div class="flex items-center text-xs text-slate-500 justify-end">
+        <span id="contador-lista">0 motos</span>
+      </div>
+    </div>
+  </div>
+  <div id="lista-motos" class="space-y-3">
+    <p class="text-slate-500 text-center py-8">Carregando...</p>
+  </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- TAB 2: INSPECOES (COM FILTROS E EXPORT)                        -->
+<!-- ============================================================ -->
+<main id="tab-inspecoes" class="p-4 max-w-4xl mx-auto hidden">
+  <div class="bg-white rounded-xl p-3 shadow-sm mb-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+      <input type="text" id="filtro-placa-insp" placeholder="Placa"
+             class="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+             oninput="debounceCarregarInspecoes()">
+      <select id="filtro-mecanico" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              onchange="carregarInspecoes()">
+        <option value="">Todos mecânicos</option>
+      </select>
+      <select id="filtro-status-insp" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              onchange="carregarInspecoes()">
+        <option value="">Todos status</option>
+        <option value="em_andamento">Em andamento</option>
+        <option value="finalizada">Finalizada</option>
+        <option value="cancelada">Cancelada</option>
+      </select>
+      <select id="filtro-modelo" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              onchange="carregarInspecoes()">
+        <option value="">Todos modelos</option>
+      </select>
+    </div>
+    <div class="grid grid-cols-2 gap-2 mb-2">
+      <input type="date" id="filtro-data-de" class="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+             onchange="carregarInspecoes()">
+      <input type="date" id="filtro-data-ate" class="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+             onchange="carregarInspecoes()">
+    </div>
+    <div class="flex items-center justify-between text-xs">
+      <span id="contador-insp" class="text-slate-500">0 inspeções</span>
+      <div class="flex gap-2">
+        <button onclick="exportarInspecoesCsv()"
+                class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded font-medium">
+          📥 CSV (cabeçalho)
+        </button>
+        <button onclick="exportarItensCsv()"
+                class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded font-medium">
+          📥 CSV (itens)
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="lista-inspecoes" class="space-y-2">
+    <p class="text-slate-500 text-center py-8">Carregando...</p>
+  </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- TAB 3: RELATORIOS GERENCIAIS                                    -->
+<!-- ============================================================ -->
+<main id="tab-relatorios" class="p-4 max-w-4xl mx-auto hidden">
+  <!-- KPIs -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+      <div id="kpi-motos" class="text-2xl font-bold text-slate-900">-</div>
+      <div class="text-xs text-slate-500">Motos ativas</div>
+    </div>
+    <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+      <div id="kpi-inspecoes" class="text-2xl font-bold text-slate-900">-</div>
+      <div class="text-xs text-slate-500">Inspeções</div>
+    </div>
+    <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+      <div id="kpi-atrasadas" class="text-2xl font-bold text-red-600">-</div>
+      <div class="text-xs text-slate-500">Atrasadas</div>
+    </div>
+    <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+      <div id="kpi-duracao" class="text-2xl font-bold text-slate-900">-</div>
+      <div class="text-xs text-slate-500">Min. médio</div>
+    </div>
+  </div>
+
+  <!-- Inspecoes por mecanico/mes -->
+  <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+    <h2 class="font-bold text-slate-900 mb-3">Inspeções por mecânico/mês</h2>
+    <div id="tabela-mec-mes" class="overflow-x-auto">
+      <p class="text-slate-500 text-sm">Carregando...</p>
+    </div>
+  </div>
+
+  <!-- Itens mais reprovados -->
+  <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+    <h2 class="font-bold text-slate-900 mb-3">Problemas mais comuns</h2>
+    <div id="tabela-reprovados">
+      <p class="text-slate-500 text-sm">Carregando...</p>
+    </div>
+  </div>
+</main>
+
+<!-- ============================================================ -->
+<!-- MODAL: DETALHE DE UMA MOTO (timeline + grafico km/tempo)       -->
+<!-- ============================================================ -->
+<div id="modal-detalhe" class="fixed inset-0 bg-black/60 z-50 hidden items-start justify-center p-3 overflow-y-auto">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl my-4">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+      <div>
+        <h2 id="detalhe-titulo" class="text-lg font-bold text-slate-900">-</h2>
+        <p id="detalhe-subtitulo" class="text-xs text-slate-500"></p>
+      </div>
+      <button onclick="fecharDetalhe()" class="text-slate-500 hover:text-slate-900 text-2xl leading-none px-2">×</button>
+    </div>
+
+    <div class="p-4">
+      <!-- Info agregada -->
+      <div id="detalhe-info" class="grid grid-cols-3 gap-3 mb-4 text-center">
+        <div><div id="det-total" class="text-xl font-bold">-</div><div class="text-xs text-slate-500">Inspeções</div></div>
+        <div><div id="det-km" class="text-xl font-bold">-</div><div class="text-xs text-slate-500">Km atual</div></div>
+        <div><div id="det-proxima" class="text-xl font-bold">-</div><div class="text-xs text-slate-500">Próxima em</div></div>
+      </div>
+
+      <!-- Grafico km vs tempo (SVG) -->
+      <h3 class="text-sm font-semibold text-slate-700 mb-2">Km ao longo do tempo</h3>
+      <div id="grafico-container" class="bg-slate-50 rounded-lg p-3 mb-4">
+        <svg id="grafico-km" viewBox="0 0 400 150" class="w-full h-32"></svg>
+      </div>
+
+      <!-- Timeline -->
+      <h3 class="text-sm font-semibold text-slate-700 mb-2">Timeline de revisões</h3>
+      <div id="detalhe-timeline" class="space-y-2">
+        <p class="text-slate-500 text-sm">Carregando...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/offline.js"></script>
+<script src="./src/status_offline.js"></script>
+<script src="./src/relatorios.js"></script>
+<script>
+let debounceTimer = null;
+let dadosLista = [];
+
+async function boot() {
+  await exigirLogin();
+  await Promise.all([carregarLista(), popularDropdownsFiltro()]);
+}
+
+function mostrarTab(id) {
+  ['tab-lista','tab-inspecoes','tab-relatorios'].forEach(t => {
+    document.getElementById(t).classList.toggle('hidden', t !== id);
+    const btn = document.getElementById('btn-' + t);
+    if (btn) btn.classList.toggle('active', 'btn-' + t === 'btn-' + id);
+  });
+  if (id === 'tab-inspecoes') carregarInspecoes();
+  if (id === 'tab-relatorios') carregarRelatorios();
+}
+
+function toast(msg, tipo='sucesso') {
+  const el = document.createElement('div');
+  el.className = `toast ${tipo}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ================================================================
+// TAB 1: LISTA DE MOTOS
+// ================================================================
+async function carregarLista() {
+  try {
+    dadosLista = await window.motosComStatus();
+    filtrarLista();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('lista-motos').innerHTML =
+      '<p class="text-red-600 text-sm text-center py-8">Erro ao carregar. Verifique conexão.</p>';
+  }
+}
+
+function filtrarLista() {
+  const placa = document.getElementById('filtro-placa-lista').value.toUpperCase();
+  const status = document.getElementById('filtro-status-lista').value;
+  const filt = dadosLista.filter(m => {
+    if (placa && !(m.placa || '').toUpperCase().includes(placa)) return false;
+    if (status && m.status_revisao !== status) return false;
+    return true;
+  });
+  document.getElementById('contador-lista').textContent = `${filt.length} ${filt.length === 1 ? 'moto' : 'motos'}`;
+  const lista = document.getElementById('lista-motos');
+  if (filt.length === 0) {
+    lista.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-slate-500 shadow-sm">Nenhuma moto encontrada</div>';
+    return;
+  }
+  lista.innerHTML = filt.map(m => renderMotoCard(m)).join('');
+}
+
+function renderMotoCard(m) {
+  const statusLabel = {
+    em_dia:        '✓ Em dia',
+    proxima:       '⚠ Próxima',
+    atrasada:      '⚠ Atrasada',
+    sem_historico: '○ Sem histórico'
+  }[m.status_revisao] || m.status_revisao;
+
+  const ultima = m.ultima_inspecao
+    ? new Date(m.ultima_inspecao).toLocaleDateString('pt-BR')
+    : 'Nunca';
+  const kmUlt = m.km_ultima_inspecao != null
+    ? (m.km_ultima_inspecao).toLocaleString('pt-BR') + ' km'
+    : '-';
+
+  return `
+    <div onclick="abrirDetalhe(${m.id})"
+         class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md">
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-900">${m.placa}</span>
+            <span class="px-2 py-0.5 text-xs rounded status-${m.status_revisao}">${statusLabel}</span>
+          </div>
+          <div class="text-sm text-slate-600 truncate">${m.modelo}${m.proprietario ? ' · ' + m.proprietario : ''}</div>
+          <div class="text-xs text-slate-500 mt-1">
+            Última: ${ultima} · ${kmUlt}
+            ${m.total_inspecoes > 0 ? ` · ${m.total_inspecoes} inspeç${m.total_inspecoes === 1 ? 'ão' : 'ões'}` : ''}
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-500">Atual</div>
+          <div class="font-bold text-slate-900 text-sm">${(m.km_atual || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-xs text-slate-500 mt-1">Próxima:</div>
+          <div class="text-sm font-medium text-red-600">${(m.proxima_km_prevista || 0).toLocaleString('pt-BR')} km</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ================================================================
+// DETALHE: TIMELINE + GRAFICO
+// ================================================================
+async function abrirDetalhe(motoId) {
+  const moto = dadosLista.find(m => m.id === motoId);
+  if (!moto) return;
+  document.getElementById('detalhe-titulo').textContent = `${moto.placa} · ${moto.modelo}`;
+  document.getElementById('detalhe-subtitulo').textContent = moto.proprietario || '';
+  document.getElementById('det-km').textContent = (moto.km_atual || 0).toLocaleString('pt-BR');
+  const restante = (moto.proxima_km_prevista || 0) - (moto.km_atual || 0);
+  document.getElementById('det-proxima').textContent = restante > 0 ? `${restante} km` : 'AGORA';
+  document.getElementById('det-total').textContent = moto.total_inspecoes || 0;
+
+  document.getElementById('modal-detalhe').classList.remove('hidden');
+  document.getElementById('modal-detalhe').classList.add('flex');
+
+  const timeline = await window.timelineDeUmaMoto(motoId);
+  renderTimeline(timeline);
+  renderGraficoKm(timeline, moto.km_atual || 0);
+}
+
+function fecharDetalhe() {
+  document.getElementById('modal-detalhe').classList.add('hidden');
+  document.getElementById('modal-detalhe').classList.remove('flex');
+}
+
+function renderTimeline(items) {
+  const container = document.getElementById('detalhe-timeline');
+  if (!items.length) {
+    container.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Nenhuma inspeção ainda</p>';
+    return;
+  }
+  container.innerHTML = items.map(i => {
+    const dt = new Date(i.data_inicio).toLocaleDateString('pt-BR');
+    const statusClass = i.status === 'finalizada' ? 'text-green-700' :
+                        i.status === 'em_andamento' ? 'text-amber-700' :
+                        'text-slate-500';
+    return `
+      <div class="border-l-2 border-slate-200 pl-3 py-2">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-medium">Revisão ${(i.revisao_km || 0).toLocaleString('pt-BR')} km</div>
+          <span class="text-xs ${statusClass}">${i.status}</span>
+        </div>
+        <div class="text-xs text-slate-500">${dt} · ${(i.km_registrado || 0).toLocaleString('pt-BR')} km · ${i.mecanico_nome || '-'}</div>
+        ${i.status === 'finalizada' ? `
+          <div class="text-xs text-slate-500 mt-1">
+            ✓ ${i.ok_count || 0} · ✗ ${i.nao_ok_count || 0} · N/A ${i.na_count || 0}
+            ${i.duracao_minutos ? ' · ' + Math.round(i.duracao_minutos) + 'min' : ''}
+          </div>` : ''}
+        ${i.pdf_url ? `
+          <button onclick="abrirPdf('${i.pdf_url}')"
+                  class="mt-1 text-xs text-blue-600 hover:underline">
+            📄 Abrir PDF
+          </button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderGraficoKm(items, kmAtual) {
+  const svg = document.getElementById('grafico-km');
+  const finalizadas = items.filter(i => i.status === 'finalizada').reverse();
+
+  if (finalizadas.length === 0) {
+    svg.innerHTML = '<text x="200" y="75" text-anchor="middle" fill="#94a3b8" font-size="12">Sem histórico ainda</text>';
+    return;
+  }
+
+  const pontos = [
+    ...finalizadas.map(i => ({
+      x: new Date(i.data_fim || i.data_inicio).getTime(),
+      y: i.km_registrado || 0
+    })),
+    { x: Date.now(), y: kmAtual, atual: true }
+  ];
+
+  const xs = pontos.map(p => p.x);
+  const ys = pontos.map(p => p.y);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const yMin = 0, yMax = Math.max(...ys, 500);
+
+  const larg = 380, alt = 130, padE = 15, padD = 10;
+  const escala = (p) => ({
+    x: padE + ((p.x - xMin) / Math.max(1, xMax - xMin)) * (larg - padE - padD),
+    y: alt - 15 - ((p.y - yMin) / Math.max(1, yMax - yMin)) * (alt - 30)
+  });
+
+  const pts = pontos.map(escala);
+  const linha = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
+  const marcadores = pts.map((p, i) => {
+    const cor = pontos[i].atual ? '#dc2626' : '#64748b';
+    return `<circle cx="${p.x}" cy="${p.y}" r="${pontos[i].atual ? 4 : 3}" fill="${cor}"/>`;
+  }).join('');
+
+  svg.innerHTML = `
+    <line x1="${padE}" y1="${alt - 15}" x2="${larg - padD}" y2="${alt - 15}" stroke="#e2e8f0"/>
+    <path d="${linha}" stroke="#dc2626" stroke-width="2" fill="none"/>
+    ${marcadores}
+    <text x="${padE}" y="10" fill="#94a3b8" font-size="9">${yMax.toLocaleString('pt-BR')} km</text>
+    <text x="${padE}" y="${alt - 3}" fill="#94a3b8" font-size="9">${new Date(xMin).toLocaleDateString('pt-BR')}</text>
+    <text x="${larg - padD}" y="${alt - 3}" text-anchor="end" fill="#dc2626" font-size="9">hoje</text>
+  `;
+}
+
+async function abrirPdf(path) {
+  try {
+    const { data, error } = await window.sb.storage.from('inspecoes').createSignedUrl(path, 3600);
+    if (error) throw error;
+    window.open(data.signedUrl, '_blank');
+  } catch(e) {
+    toast('Erro ao abrir PDF', 'erro');
+  }
+}
+
+// ================================================================
+// TAB 2: INSPECOES
+// ================================================================
+async function popularDropdownsFiltro() {
+  try {
+    const [mecs, mods] = await Promise.all([window.listarMecanicos(), window.listarModelos()]);
+    const selMec = document.getElementById('filtro-mecanico');
+    selMec.innerHTML = '<option value="">Todos mecânicos</option>' +
+                       mecs.map(m => `<option value="${m}">${m}</option>`).join('');
+    const selMod = document.getElementById('filtro-modelo');
+    selMod.innerHTML = '<option value="">Todos modelos</option>' +
+                       mods.map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
+  } catch(e) { console.warn(e); }
+}
+
+function debounceCarregarInspecoes() {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(carregarInspecoes, 350);
+}
+
+function coletarFiltros() {
+  return {
+    placa:    document.getElementById('filtro-placa-insp').value,
+    mecanico: document.getElementById('filtro-mecanico').value,
+    status:   document.getElementById('filtro-status-insp').value,
+    modelo:   document.getElementById('filtro-modelo').value,
+    dataDe:   document.getElementById('filtro-data-de').value,
+    dataAte:  document.getElementById('filtro-data-ate').value
+  };
+}
+
+async function carregarInspecoes() {
+  const container = document.getElementById('lista-inspecoes');
+  container.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">Carregando...</p>';
+  try {
+    const insp = await window.buscarInspecoes(coletarFiltros());
+    document.getElementById('contador-insp').textContent =
+      `${insp.length} inspeç${insp.length === 1 ? 'ão' : 'ões'}`;
+    if (insp.length === 0) {
+      container.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-slate-500 shadow-sm">Nenhuma inspeção encontrada</div>';
+      return;
+    }
+    container.innerHTML = insp.map(renderLinhaInspecao).join('');
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = '<p class="text-red-600 text-sm text-center py-4">Erro ao carregar</p>';
+  }
+}
+
+function renderLinhaInspecao(i) {
+  const dt = new Date(i.data_inicio).toLocaleDateString('pt-BR');
+  const statusColor = i.status === 'finalizada' ? 'bg-green-100 text-green-700' :
+                      i.status === 'em_andamento' ? 'bg-amber-100 text-amber-700' :
+                      'bg-slate-100 text-slate-700';
+  return `
+    <div class="bg-white rounded-lg p-3 shadow-sm text-sm flex items-center justify-between">
+      <div class="flex-1 min-w-0">
+        <div class="font-medium">${i.placa} · Rev ${(i.revisao_km || 0).toLocaleString('pt-BR')} km</div>
+        <div class="text-xs text-slate-500">${dt} · ${i.mecanico_nome || '-'} · ${(i.km_registrado || 0).toLocaleString('pt-BR')} km</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 text-xs rounded ${statusColor}">${i.status}</span>
+        ${i.pdf_url ? `<button onclick="abrirPdf('${i.pdf_url}')" class="text-xs text-blue-600 hover:underline">PDF</button>` : ''}
+      </div>
+    </div>`;
+}
+
+async function exportarInspecoesCsv() {
+  try {
+    const r = await window.exportarCsvInspecoes(coletarFiltros());
+    toast(`Exportadas ${r.linhas} inspeções: ${r.nome}`);
+  } catch(e) { toast('Erro ao exportar', 'erro'); }
+}
+
+async function exportarItensCsv() {
+  try {
+    const r = await window.exportarCsvItens(coletarFiltros());
+    if (r.linhas === 0) { toast('Nenhum item para exportar', 'erro'); return; }
+    toast(`Exportados ${r.linhas} itens: ${r.nome}`);
+  } catch(e) { toast('Erro ao exportar', 'erro'); }
+}
+
+// ================================================================
+// TAB 3: RELATORIOS
+// ================================================================
+async function carregarRelatorios() {
+  try {
+    const [stats, mecMes, reprov] = await Promise.all([
+      window.estatisticasGerais(),
+      window.inspecoesPorMecanicoMes(),
+      window.itensMaisReprovados(15)
+    ]);
+
+    // KPIs
+    if (stats) {
+      document.getElementById('kpi-motos').textContent = stats.total_motos || 0;
+      document.getElementById('kpi-inspecoes').textContent = stats.total_inspecoes || 0;
+      document.getElementById('kpi-atrasadas').textContent = stats.motos_atrasadas || 0;
+      document.getElementById('kpi-duracao').textContent = stats.duracao_media_min != null
+        ? Math.round(stats.duracao_media_min) : '-';
+    }
+
+    // Tabela mecanico/mes
+    const tabMec = document.getElementById('tabela-mec-mes');
+    if (mecMes.length === 0) {
+      tabMec.innerHTML = '<p class="text-slate-500 text-sm">Sem dados ainda</p>';
+    } else {
+      tabMec.innerHTML = `
+        <table class="w-full text-sm">
+          <thead><tr class="border-b text-slate-500 text-xs">
+            <th class="text-left py-1 pr-2">Mês</th>
+            <th class="text-left py-1 pr-2">Mecânico</th>
+            <th class="text-right py-1 px-2">Total</th>
+            <th class="text-right py-1 px-2">Finalizadas</th>
+            <th class="text-right py-1 pl-2">Duração méd.</th>
+          </tr></thead>
+          <tbody>
+            ${mecMes.map(r => `
+              <tr class="border-b border-slate-100">
+                <td class="py-1 pr-2">${new Date(r.mes).toLocaleDateString('pt-BR', {month:'short',year:'numeric'})}</td>
+                <td class="py-1 pr-2">${r.mecanico_nome}</td>
+                <td class="py-1 px-2 text-right">${r.total}</td>
+                <td class="py-1 px-2 text-right">${r.finalizadas}</td>
+                <td class="py-1 pl-2 text-right text-slate-500">${r.duracao_media_min != null ? Math.round(r.duracao_media_min) + 'min' : '-'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    // Tabela itens reprovados
+    const tabRep = document.getElementById('tabela-reprovados');
+    if (reprov.length === 0) {
+      tabRep.innerHTML = '<p class="text-slate-500 text-sm">Nenhum item reprovado ainda</p>';
+    } else {
+      tabRep.innerHTML = `
+        <div class="space-y-1">
+          ${reprov.map(r => `
+            <div class="flex items-center justify-between text-sm border-b border-slate-100 py-1">
+              <div class="flex-1 min-w-0">
+                <div class="truncate">${r.descricao}</div>
+                <div class="text-xs text-slate-500">${r.categoria} · ${r.modelo}</div>
+              </div>
+              <div class="text-right ml-2">
+                <div class="font-bold text-red-600">${r.reprovacoes}</div>
+                <div class="text-xs text-slate-500">reprovações</div>
+              </div>
+            </div>`).join('')}
+        </div>`;
+    }
+  } catch(e) {
+    console.error(e);
+    toast('Erro ao carregar relatórios', 'erro');
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
