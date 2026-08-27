@@ -6,8 +6,8 @@
 // Para producao, considere usar variaveis em build time ou config remota.
 // =====================================================================
 
-const SUPABASE_URL = 'https://SEU_PROJETO.supabase.co';
-const SUPABASE_ANON_KEY = 'SUA_ANON_KEY_AQUI';
+const SUPABASE_URL = 'https://jybfdknrxzlwpjyrayrb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5YmZka25yeHpsd3BqeXJheXJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxODE4MTUsImV4cCI6MjA5Nzc1NzgxNX0.Z2yc9ym8uxhin3uQCg7271xhwWFFOtak08zg489nDwI';
 
 // Inicializa o client (assume que supabase-js ja foi carregado via CDN no HTML)
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
