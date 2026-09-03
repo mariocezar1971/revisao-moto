@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#dc2626">
+  <title>QR Code · Revisão Moto</title>
+  <link rel="manifest" href="./manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen">
+
+<header class="header-app p-4 dark:bg-slate-800">
+  <div class="flex items-center gap-3 max-w-md mx-auto">
+    <a href="./index.html" class="text-slate-300 hover:text-white text-xl">←</a>
+    <h1 class="text-lg font-bold text-white" data-i18n="qr.titulo">QR Code da Moto</h1>
+  </div>
+</header>
+
+<main class="p-4 max-w-md mx-auto">
+
+  <!-- Tabs -->
+  <div class="flex bg-white dark:bg-slate-800 rounded-xl overflow-hidden mb-4 shadow-sm">
+    <button onclick="mostrarAba('gerar')" id="tab-gerar"
+            class="flex-1 py-3 font-medium bg-red-600 text-white">Gerar</button>
+    <button onclick="mostrarAba('escanear')" id="tab-escanear"
+            class="flex-1 py-3 font-medium">Escanear</button>
+  </div>
+
+  <!-- Aba GERAR -->
+  <section id="painel-gerar" class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3" data-i18n="qr.explicacao">
+      Cole este QR na moto. Ao escanear, abre a inspeção direto.
+    </p>
+    <label class="text-sm text-slate-700 dark:text-slate-200">Placa:</label>
+    <input id="placa-gerar" placeholder="ABC-1234" maxlength="8"
+           class="w-full mt-1 px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg uppercase text-base"
+           oninput="gerarPreview()">
+    <div id="qr-container" class="mt-4 flex justify-center bg-white p-4 rounded-lg"></div>
+    <div class="mt-3 flex gap-2">
+      <button onclick="imprimir()"
+              class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-800 dark:text-white rounded font-medium">
+        🖨️ Imprimir
+      </button>
+      <button onclick="baixarSvg()"
+              class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-800 dark:text-white rounded font-medium">
+        💾 Baixar SVG
+      </button>
+    </div>
+  </section>
+
+  <!-- Aba ESCANEAR -->
+  <section id="painel-escanear" class="hidden bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+    <div class="relative rounded-lg overflow-hidden bg-black">
+      <video id="video-scan" class="w-full max-h-96" playsinline></video>
+      <div id="overlay-scan" class="absolute inset-0 border-4 border-red-500 opacity-50 pointer-events-none"></div>
+    </div>
+    <div class="mt-3 text-center">
+      <button id="btn-start-scan" onclick="iniciarScan()"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium" data-i18n="qr.escanear">
+        Escanear QR
+      </button>
+      <button id="btn-stop-scan" onclick="pararScan()" style="display:none"
+              class="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded font-medium">
+        Parar
+      </button>
+    </div>
+    <p id="scan-status" class="mt-3 text-sm text-slate-600 dark:text-slate-300 text-center"></p>
+  </section>
+</main>
+
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
+<script src="./src/qrcode.js"></script>
+<script>
+let qrAtualSvg = null;
+
+async function boot() {
+  await exigirLogin();
+
+  // Se veio ?placa=X na URL, pre-preenche
+  const p = new URLSearchParams(location.search).get('placa');
+  if (p) { document.getElementById('placa-gerar').value = p; gerarPreview(); }
+}
+
+function mostrarAba(qual) {
+  const g = qual === 'gerar';
+  document.getElementById('painel-gerar').classList.toggle('hidden', !g);
+  document.getElementById('painel-escanear').classList.toggle('hidden', g);
+  document.getElementById('tab-gerar').classList.toggle('bg-red-600', g);
+  document.getElementById('tab-gerar').classList.toggle('text-white', g);
+  document.getElementById('tab-escanear').classList.toggle('bg-red-600', !g);
+  document.getElementById('tab-escanear').classList.toggle('text-white', !g);
+  if (!g) pararScan();
+}
+
+function gerarPreview() {
+  const placa = document.getElementById('placa-gerar').value.trim().toUpperCase();
+  const cont = document.getElementById('qr-container');
+  if (!placa || placa.length < 4) {
+    cont.innerHTML = '<p class="text-slate-400 text-sm">Digite uma placa</p>';
+    return;
+  }
+  qrAtualSvg = window.qrMoto.gerarQrParaPlaca(placa, 256);
+  cont.innerHTML = qrAtualSvg || '<p class="text-red-500">Erro ao gerar</p>';
+  const svg = cont.querySelector('svg');
+  if (svg) { svg.style.width = '256px'; svg.style.height = '256px'; }
+}
+
+function imprimir() {
+  if (!qrAtualSvg) { alert('Gere um QR primeiro'); return; }
+  const placa = document.getElementById('placa-gerar').value.trim().toUpperCase();
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>QR ${placa}</title></head>
+    <body style="text-align:center;padding:40px;font-family:sans-serif">
+      <h1>${placa}</h1>
+      <div>${qrAtualSvg}</div>
+      <p>Escaneie para abrir a inspeção</p>
+    </body></html>
+  `);
+  w.document.close();
+  setTimeout(() => { w.print(); }, 300);
+}
+
+function baixarSvg() {
+  if (!qrAtualSvg) { alert('Gere um QR primeiro'); return; }
+  const placa = document.getElementById('placa-gerar').value.trim().toUpperCase();
+  const blob = new Blob([qrAtualSvg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `qr-${placa}.svg`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 200);
+}
+
+async function iniciarScan() {
+  const video = document.getElementById('video-scan');
+  const status = document.getElementById('scan-status');
+  status.textContent = 'Iniciando câmera...';
+  document.getElementById('btn-start-scan').style.display = 'none';
+  document.getElementById('btn-stop-scan').style.display = 'inline-block';
+
+  window.qrMoto.iniciarScanner(
+    video,
+    (texto) => {
+      status.textContent = `QR lido: ${texto}`;
+      const placa = window.qrMoto.extrairPlacaDoQr(texto);
+      if (placa) {
+        window.location.href = `./inspecao.html?placa=${encodeURIComponent(placa)}`;
+      } else {
+        status.textContent = `Não foi possível extrair placa de: ${texto}`;
+      }
+    },
+    (erro) => {
+      status.textContent = 'Erro: ' + (erro.message || erro);
+      document.getElementById('btn-start-scan').style.display = 'inline-block';
+      document.getElementById('btn-stop-scan').style.display = 'none';
+    }
+  );
+}
+
+function pararScan() {
+  window.qrMoto.pararScanner();
+  document.getElementById('btn-start-scan').style.display = 'inline-block';
+  document.getElementById('btn-stop-scan').style.display = 'none';
+}
+
+boot();
+</script>
+</body>
+</html>

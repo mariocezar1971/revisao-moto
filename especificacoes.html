@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#dc2626">
+  <title>Especificações · Revisão Moto</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen">
+
+<header class="header-app p-4 dark:bg-slate-800">
+  <div class="flex items-center gap-3 max-w-3xl mx-auto">
+    <a href="./index.html" class="text-slate-300 hover:text-white text-xl">←</a>
+    <h1 class="text-lg font-bold text-white" data-i18n="specs.titulo">Especificações Técnicas</h1>
+  </div>
+</header>
+
+<main class="p-4 max-w-3xl mx-auto">
+  <!-- Seletor de modelo -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm mb-4">
+    <label class="text-xs text-slate-500 dark:text-slate-400" data-i18n="specs.escolher_modelo">Escolha o modelo</label>
+    <select id="sel-modelo" onchange="carregarEspecs()"
+            class="w-full mt-1 px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-base">
+      <option value="">-</option>
+    </select>
+  </div>
+
+  <div id="conteudo" class="space-y-4">
+    <p class="text-slate-500 text-center py-8">Escolha um modelo para ver as especificações</p>
+  </div>
+</main>
+
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
+<script>
+async function boot() {
+  await exigirLogin();
+
+  // Popula modelos
+  const { data: modelos } = await window.sb.from('modelos')
+    .select('id, nome').eq('ativo', true).order('nome');
+  const sel = document.getElementById('sel-modelo');
+  (modelos || []).forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id; opt.textContent = m.nome;
+    sel.appendChild(opt);
+  });
+
+  // Se veio ?modelo=X na URL, seleciona
+  const params = new URLSearchParams(location.search);
+  const idParam = params.get('modelo');
+  if (idParam) { sel.value = idParam; carregarEspecs(); }
+}
+
+async function carregarEspecs() {
+  const modeloId = document.getElementById('sel-modelo').value;
+  const cont = document.getElementById('conteudo');
+  if (!modeloId) {
+    cont.innerHTML = '<p class="text-slate-500 text-center py-8">Escolha um modelo</p>';
+    return;
+  }
+  cont.innerHTML = '<p class="text-slate-500 text-center py-4">Carregando...</p>';
+
+  try {
+    const { data, error } = await window.sb.from('vw_especificacoes')
+      .select('*').eq('modelo_id', modeloId);
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      cont.innerHTML = '<p class="text-slate-500 text-center py-8">Sem especificações cadastradas</p>';
+      return;
+    }
+
+    // Agrupa por categoria
+    const grupos = {};
+    data.forEach(e => {
+      if (!grupos[e.categoria]) grupos[e.categoria] = [];
+      grupos[e.categoria].push(e);
+    });
+
+    cont.innerHTML = Object.entries(grupos).map(([cat, itens]) => `
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+        <h2 class="font-bold text-red-600 mb-3">${cat}</h2>
+        <div class="space-y-2">
+          ${itens.map(i => `
+            <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-700">
+              <span class="text-sm text-slate-700 dark:text-slate-200">${i.item}</span>
+              <span class="text-sm font-semibold text-slate-900 dark:text-white">${i.valor}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error(e);
+    cont.innerHTML = '<p class="text-red-600 text-center py-4">Erro ao carregar</p>';
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

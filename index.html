@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+// Onboarding: redireciona se primeira vez
+if (!localStorage.getItem('rm_onboarding_visto') && !location.search.includes('skip_onboarding')) {
+    window.location.replace('./onboarding.html');
+}
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#dc2626">
@@ -14,6 +21,7 @@
 
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: "class" };</script>
 
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -92,6 +100,16 @@
                     <div class="text-3xl mb-2">📋</div>
                     <div>Histórico</div>
                 </a>
+
+            <a href="./especificacoes.html"
+               class="block bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white text-slate-900 rounded-xl p-4 text-center font-medium mb-3 transition">
+                🔧 Especificações Técnicas
+            </a>
+
+            <a href="./qrcode.html"
+               class="block bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white text-slate-900 rounded-xl p-4 text-center font-medium mb-6 transition">
+                📱 QR Code (gerar/escanear)
+            </a>
             </div>
 
             <a href="./admin.html"
@@ -140,6 +158,9 @@
     <script src="./src/auth.js"></script>
     <script src="./src/offline.js"></script>
     <script src="./src/status_offline.js"></script>
+    <script src="./src/darkmode.js"></script>
+    <script src="./src/i18n.js"></script>
+    <script src="./src/notifications.js"></script>
     <script>
         // ================================================================
         // BOOT
@@ -280,5 +301,20 @@
         // ================================================================
         boot();
     </script>
+<script>
+// Fase 7: pedir permissao de notif e checar alertas ao carregar dashboard
+window.addEventListener('load', () => {
+    setTimeout(async () => {
+        if (window.notifs) {
+            const cont = document.getElementById('dashboard-btn-notif') || document.body;
+            if (Notification.permission === 'default' && cont) {
+                window.notifs.criarBotaoPermissao(cont);
+            } else if (Notification.permission === 'granted') {
+                window.notifs.checarECronizarAlertas();
+            }
+        }
+    }, 2000);
+});
+</script>
 </body>
 </html>

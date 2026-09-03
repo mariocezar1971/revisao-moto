@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#dc2626">
+  <title>Bem-vindo · Revisão Moto</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <link rel="stylesheet" href="./css/styles.css">
+  <style>
+    .slide { transition: all .35s ease; }
+    .dot { transition: background .2s; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen">
+
+<main class="min-h-screen flex flex-col p-6 max-w-md mx-auto">
+
+  <!-- Skip -->
+  <div class="flex justify-end">
+    <button onclick="finalizar()" data-i18n="onboarding.pular"
+            class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400">Pular</button>
+  </div>
+
+  <!-- Slides -->
+  <div class="flex-1 flex flex-col justify-center">
+    <div id="slide-container" class="text-center">
+      <div class="text-7xl mb-6" id="slide-emoji">👋</div>
+      <h1 id="slide-titulo" class="text-2xl font-bold text-slate-900 dark:text-white mb-3">-</h1>
+      <p id="slide-texto" class="text-slate-600 dark:text-slate-300 leading-relaxed">-</p>
+    </div>
+  </div>
+
+  <!-- Indicadores -->
+  <div class="flex justify-center gap-2 my-6">
+    <span class="dot w-2 h-2 rounded-full bg-red-600" id="dot-0"></span>
+    <span class="dot w-2 h-2 rounded-full bg-slate-300" id="dot-1"></span>
+    <span class="dot w-2 h-2 rounded-full bg-slate-300" id="dot-2"></span>
+    <span class="dot w-2 h-2 rounded-full bg-slate-300" id="dot-3"></span>
+    <span class="dot w-2 h-2 rounded-full bg-slate-300" id="dot-4"></span>
+  </div>
+
+  <!-- Botao -->
+  <button id="btn-proximo" onclick="proximo()"
+          class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl">
+    <span data-i18n="onboarding.proximo">Próximo</span>
+  </button>
+</main>
+
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
+<script>
+const SLIDES = [
+  { emoji: '👋', tKey: 1 },
+  { emoji: '🏍️', tKey: 2 },
+  { emoji: '✅', tKey: 3 },
+  { emoji: '📄', tKey: 4 },
+  { emoji: '📡', tKey: 5 }
+];
+let idx = 0;
+
+function renderSlide() {
+  const s = SLIDES[idx];
+  document.getElementById('slide-emoji').textContent = s.emoji;
+  document.getElementById('slide-titulo').textContent = window.t(`onboarding.titulo_${s.tKey}`);
+  document.getElementById('slide-texto').textContent  = window.t(`onboarding.texto_${s.tKey}`);
+  for (let i = 0; i < SLIDES.length; i++) {
+    const d = document.getElementById(`dot-${i}`);
+    d.className = 'dot w-2 h-2 rounded-full ' + (i === idx ? 'bg-red-600 w-6' : 'bg-slate-300 dark:bg-slate-600');
+  }
+  const eh_ultimo = idx === SLIDES.length - 1;
+  document.getElementById('btn-proximo').querySelector('span').textContent =
+    window.t(eh_ultimo ? 'onboarding.comecar' : 'onboarding.proximo');
+}
+
+function proximo() {
+  if (idx < SLIDES.length - 1) { idx++; renderSlide(); }
+  else finalizar();
+}
+
+function finalizar() {
+  localStorage.setItem('rm_onboarding_visto', new Date().toISOString());
+  window.location.href = './index.html';
+}
+
+// Boot: espera i18n carregar
+window.addEventListener('i18n:trocado', renderSlide);
+setTimeout(renderSlide, 200);
+</script>
+</body>
+</html>

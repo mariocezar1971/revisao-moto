@@ -1,0 +1,123 @@
+{
+  "app": {
+    "titulo": "Motorcycle Service",
+    "subtitulo": "Maintenance checklist"
+  },
+  "nav": {
+    "entrar": "Sign in",
+    "sair": "Sign out",
+    "voltar": "Back"
+  },
+  "login": {
+    "email": "E-mail",
+    "senha": "Password",
+    "entrar": "Sign in",
+    "erro_credenciais": "Invalid credentials",
+    "esqueceu_senha": "Forgot my password"
+  },
+  "dashboard": {
+    "nova_inspecao": "New Inspection",
+    "cadastrar_motos": "Register/Edit Motorcycles",
+    "historico": "History and Reports",
+    "especificacoes": "Technical Specs",
+    "resumo": "Summary",
+    "motos": "Motorcycles",
+    "inspecoes": "Inspections",
+    "pendentes": "Pending"
+  },
+  "moto": {
+    "placa": "Plate",
+    "modelo": "Model",
+    "ano": "Year",
+    "cor": "Color",
+    "proprietario": "Owner",
+    "telefone": "Phone",
+    "km_atual": "Current mileage",
+    "cadastrar": "Add Motorcycle",
+    "editar": "Edit",
+    "arquivar": "Archive"
+  },
+  "inspecao": {
+    "titulo": "Inspection",
+    "buscar_moto": "Search by plate",
+    "sugerida": "Suggested service",
+    "iniciar": "Start inspection",
+    "finalizar": "Finish",
+    "assinar_mecanico": "Mechanic signature",
+    "assinar_cliente": "Customer signature",
+    "gerar_pdf": "Generate PDF",
+    "compartilhar": "Share",
+    "baixar": "Download",
+    "status": {
+      "ok": "OK",
+      "nao_ok": "Not OK",
+      "na": "N/A",
+      "em_andamento": "In progress",
+      "finalizada": "Finished",
+      "cancelada": "Cancelled"
+    }
+  },
+  "historico": {
+    "aba_motos": "Motorcycles",
+    "aba_inspecoes": "Inspections",
+    "aba_relatorios": "Reports",
+    "filtro_placa": "Filter by plate",
+    "filtro_status": "All statuses",
+    "filtro_mecanico": "All mechanics",
+    "filtro_modelo": "All models",
+    "export_cabecalho": "CSV (headers)",
+    "export_itens": "CSV (items)",
+    "em_dia": "Up to date",
+    "proxima": "Coming up",
+    "atrasada": "Overdue",
+    "sem_historico": "No history"
+  },
+  "specs": {
+    "titulo": "Technical Specifications",
+    "escolher_modelo": "Choose model",
+    "categoria": "Category",
+    "item": "Item",
+    "valor": "Value"
+  },
+  "onboarding": {
+    "titulo_1": "Welcome to Motorcycle Service",
+    "texto_1": "Checklist system for Royal Enfield motorcycle services.",
+    "titulo_2": "Register your motorcycles",
+    "texto_2": "Record plate, model, year and owner of each motorcycle.",
+    "titulo_3": "Run the checklist",
+    "texto_3": "The app suggests the correct service by mileage and guides you item by item.",
+    "titulo_4": "Sign and share",
+    "texto_4": "Collect digital signatures, generate PDF and send via WhatsApp.",
+    "titulo_5": "Works offline",
+    "texto_5": "No signal at the shop? The app keeps working and syncs later.",
+    "pular": "Skip",
+    "proximo": "Next",
+    "comecar": "Start"
+  },
+  "qr": {
+    "titulo": "Motorcycle QR Code",
+    "explicacao": "Attach this QR to the motorcycle. Scan it to open the inspection directly.",
+    "escanear": "Scan QR",
+    "gerar": "Generate QR",
+    "camera_negada": "Camera permission denied",
+    "sem_camera": "Camera unavailable"
+  },
+  "notif": {
+    "revisao_proxima": "Service coming up",
+    "revisao_proxima_desc": "Motorcycle {placa} is approaching the {km} km service",
+    "inspecao_pendente": "Inspection in progress",
+    "inspecao_pendente_desc": "You started an inspection over 24 hours ago",
+    "permitir": "Allow notifications"
+  },
+  "geral": {
+    "salvar": "Save",
+    "cancelar": "Cancel",
+    "excluir": "Delete",
+    "confirmar": "Confirm",
+    "carregando": "Loading...",
+    "erro": "Error",
+    "sucesso": "Success",
+    "sim": "Yes",
+    "nao": "No"
+  }
+}

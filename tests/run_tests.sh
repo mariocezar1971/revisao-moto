@@ -125,12 +125,21 @@ echo ""
 python3 "$RAIZ/tests/test_fase6.py"
 EXIT_F6=$?
 
-EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 ))
+echo ""
+echo "----------------------------------------"
+echo ""
+
+# Fase 7 (Polimento - reusa banco para migration de especs)
+PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test \
+    python3 "$RAIZ/tests/test_fase7.py"
+EXIT_F7=$?
+
+EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 + EXIT_F7 ))
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then
     echo "=========================================="
-    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 6)"
+    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 7)"
     echo "=========================================="
 else
     echo "=========================================="
@@ -142,6 +151,7 @@ else
     echo "  Fase 4 exit: $EXIT_F4"
     echo "  Fase 5 exit: $EXIT_F5"
     echo "  Fase 6 exit: $EXIT_F6"
+    echo "  Fase 7 exit: $EXIT_F7"
     echo "=========================================="
 fi
 

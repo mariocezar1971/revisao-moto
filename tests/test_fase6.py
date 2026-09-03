@@ -153,7 +153,11 @@ def t_service_worker():
     if not arq.exists(): return
     sw = arq.read_text()
 
-    teste("Versao bumped para 0.6.x", 'v0.6' in sw, det=re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw).group(1) if re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw) else '?')
+    # Aceita v0.6+ (versao pode ter avancado em fases posteriores)
+    m = re.search(r"CACHE_VERSION\s*=\s*'v0\.(\d+)", sw)
+    versao_maior = int(m.group(1)) if m else 0
+    teste("Versao bumped para 0.6+", versao_maior >= 6,
+          det=re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw).group(1) if re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw) else '?')
 
     # Novos arquivos no APP_SHELL
     for arq_esperado in ['admin.html', 'inspecao.html', 'historico.html',

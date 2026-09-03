@@ -3,7 +3,7 @@
 // Estrategia: cache-first para app shell, network-first para Supabase
 // =====================================================================
 
-const CACHE_VERSION = 'v0.6.0';
+const CACHE_VERSION = 'v0.7.0';
 const CACHE_NAME = `revisao-moto-${CACHE_VERSION}`;
 
 // App shell - arquivos essenciais para funcionar offline
@@ -13,6 +13,9 @@ const APP_SHELL = [
   './admin.html',
   './inspecao.html',
   './historico.html',
+  './onboarding.html',
+  './especificacoes.html',
+  './qrcode.html',
   './manifest.json',
   './css/styles.css',
   './src/supabase-client.js',
@@ -24,12 +27,20 @@ const APP_SHELL = [
   './src/relatorios.js',
   './src/offline.js',
   './src/status_offline.js',
+  './src/darkmode.js',
+  './src/i18n.js',
+  './src/qrcode.js',
+  './src/notifications.js',
   './assets/icon-192.png',
   './assets/icon-512.png',
+  './assets/icon-512-maskable.png',
+  './assets/i18n/pt.json',
+  './assets/i18n/en.json',
   // CDNs essenciais
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js'
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js'
 ];
 
 // =====================================================================

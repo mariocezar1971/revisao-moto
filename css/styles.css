@@ -154,3 +154,15 @@ body {
   font-weight: 600;
   font-size: 0.875rem;
 }
+
+/* ==== Fase 7: Dark Mode ==== */
+html.dark body { background-color: #0f172a; color: #f1f5f9; }
+html.dark .header-app { background: #1e293b; }
+html.dark input, html.dark select, html.dark textarea {
+    background-color: #1e293b; color: #f1f5f9; border-color: #475569;
+}
+html.dark .toast { background: #334155; color: #f1f5f9; }
+html.dark .btn-status { border-color: #475569; }
+
+/* Onboarding animacoes */
+.dot.w-6 { width: 1.5rem; transition: width .3s; }

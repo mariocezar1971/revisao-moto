@@ -1,0 +1,123 @@
+{
+  "app": {
+    "titulo": "Revisão Moto",
+    "subtitulo": "Checklist de manutenção"
+  },
+  "nav": {
+    "entrar": "Entrar",
+    "sair": "Sair",
+    "voltar": "Voltar"
+  },
+  "login": {
+    "email": "E-mail",
+    "senha": "Senha",
+    "entrar": "Entrar",
+    "erro_credenciais": "Credenciais inválidas",
+    "esqueceu_senha": "Esqueci minha senha"
+  },
+  "dashboard": {
+    "nova_inspecao": "Nova Inspeção",
+    "cadastrar_motos": "Cadastrar/Editar Motos",
+    "historico": "Histórico e Relatórios",
+    "especificacoes": "Especificações Técnicas",
+    "resumo": "Resumo",
+    "motos": "Motos",
+    "inspecoes": "Inspeções",
+    "pendentes": "Pendentes"
+  },
+  "moto": {
+    "placa": "Placa",
+    "modelo": "Modelo",
+    "ano": "Ano",
+    "cor": "Cor",
+    "proprietario": "Proprietário",
+    "telefone": "Telefone",
+    "km_atual": "Km atual",
+    "cadastrar": "Cadastrar Moto",
+    "editar": "Editar",
+    "arquivar": "Arquivar"
+  },
+  "inspecao": {
+    "titulo": "Inspeção",
+    "buscar_moto": "Buscar por placa",
+    "sugerida": "Revisão sugerida",
+    "iniciar": "Iniciar inspeção",
+    "finalizar": "Finalizar",
+    "assinar_mecanico": "Assinatura do mecânico",
+    "assinar_cliente": "Assinatura do cliente",
+    "gerar_pdf": "Gerar PDF",
+    "compartilhar": "Compartilhar",
+    "baixar": "Baixar",
+    "status": {
+      "ok": "OK",
+      "nao_ok": "Não OK",
+      "na": "N/A",
+      "em_andamento": "Em andamento",
+      "finalizada": "Finalizada",
+      "cancelada": "Cancelada"
+    }
+  },
+  "historico": {
+    "aba_motos": "Motos",
+    "aba_inspecoes": "Inspeções",
+    "aba_relatorios": "Relatórios",
+    "filtro_placa": "Filtrar por placa",
+    "filtro_status": "Todos os status",
+    "filtro_mecanico": "Todos mecânicos",
+    "filtro_modelo": "Todos modelos",
+    "export_cabecalho": "CSV (cabeçalho)",
+    "export_itens": "CSV (itens)",
+    "em_dia": "Em dia",
+    "proxima": "Próxima",
+    "atrasada": "Atrasada",
+    "sem_historico": "Sem histórico"
+  },
+  "specs": {
+    "titulo": "Especificações Técnicas",
+    "escolher_modelo": "Escolha o modelo",
+    "categoria": "Categoria",
+    "item": "Item",
+    "valor": "Valor"
+  },
+  "onboarding": {
+    "titulo_1": "Bem-vindo à Revisão Moto",
+    "texto_1": "Sistema de checklist para revisões de motocicletas Royal Enfield.",
+    "titulo_2": "Cadastre suas motos",
+    "texto_2": "Registre placa, modelo, ano e proprietário de cada motocicleta.",
+    "titulo_3": "Execute o checklist",
+    "texto_3": "O app sugere a revisão correta pelos km e guia você item a item.",
+    "titulo_4": "Assine e compartilhe",
+    "texto_4": "Colete assinaturas digitais, gere PDF e envie pelo WhatsApp.",
+    "titulo_5": "Funciona offline",
+    "texto_5": "Sem sinal na oficina? O app continua funcionando e sincroniza depois.",
+    "pular": "Pular",
+    "proximo": "Próximo",
+    "comecar": "Começar"
+  },
+  "qr": {
+    "titulo": "QR Code da Moto",
+    "explicacao": "Cole este QR na moto. Ao escanear, abre a inspeção direto.",
+    "escanear": "Escanear QR",
+    "gerar": "Gerar QR",
+    "camera_negada": "Permissão de câmera negada",
+    "sem_camera": "Câmera não disponível"
+  },
+  "notif": {
+    "revisao_proxima": "Revisão próxima",
+    "revisao_proxima_desc": "A moto {placa} está próxima da revisão de {km} km",
+    "inspecao_pendente": "Inspeção em andamento",
+    "inspecao_pendente_desc": "Você iniciou uma inspeção há mais de 24 horas",
+    "permitir": "Permitir notificações"
+  },
+  "geral": {
+    "salvar": "Salvar",
+    "cancelar": "Cancelar",
+    "excluir": "Excluir",
+    "confirmar": "Confirmar",
+    "carregando": "Carregando...",
+    "erro": "Erro",
+    "sucesso": "Sucesso",
+    "sim": "Sim",
+    "nao": "Não"
+  }
+}

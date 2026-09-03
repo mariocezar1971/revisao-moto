@@ -8,6 +8,7 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" href="./assets/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class" };</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="./css/styles.css">
@@ -216,6 +217,8 @@
 <script src="./src/camera.js"></script>
 <script src="./src/assinatura.js"></script>
 <script src="./src/pdf.js"></script>
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
 <script src="./src/inspecao.js"></script>
 <script>
 // ================================================================
@@ -682,6 +685,26 @@ async function pedirCancelamento() {
 }
 
 boot();
+</script>
+<script>
+// Fase 7: auto-preenche placa vinda do QR scan
+function preencherPlacaViaUrl() {
+    const params = new URLSearchParams(location.search);
+    const placa = params.get('placa');
+    if (!placa) return;
+    // Tenta encontrar o input de placa (algumas ids possiveis)
+    const seletores = ['#placa-busca', '#input-placa', '#busca-placa',
+                        'input[name="placa"]', 'input[placeholder*="placa" i]'];
+    for (const s of seletores) {
+        const el = document.querySelector(s);
+        if (el) {
+            el.value = placa.toUpperCase();
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
+        }
+    }
+}
+window.addEventListener('load', () => setTimeout(preencherPlacaViaUrl, 500));
 </script>
 </body>
 </html>

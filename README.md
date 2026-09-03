@@ -74,9 +74,9 @@ Depois: configurar `.env` e `usuarios.json`, rodar `scripts/setup_fase1.py`, apl
 | **Fase 4** | Assinaturas digitais e PDF assinado | OK | 83 |
 | **Fase 5** | Historico, filtros, CSV, relatorios | OK | 80 |
 | **Fase 6** | Offline completo (IndexedDB, sync queue) | OK | 83 |
-| Fase 7 | Polimento (QR, dark mode) | Pendente | - |
+| **Fase 7** | Polimento: icones, onboarding, QR, specs, notifs, dark mode, i18n | OK | 122 |
 
-**Total: 510 testes automatizados** via `./tests/run_tests.sh`.
+**Total: 633 testes automatizados** via `./tests/run_tests.sh`.
 
 ---
 
