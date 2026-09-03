@@ -435,8 +435,8 @@ def testar_html_js():
 
     # supabase-client tem placeholder
     sb = (RAIZ / 'src/supabase-client.js').read_text()
-    teste("supabase-client tem placeholder SUPABASE_URL",
-          'SEU_PROJETO' in sb,
+    teste("supabase-client configurado (real ou placeholder)",
+          ('SEU_PROJETO' in sb or '.supabase.co' in sb),
           'pronto para edicao do usuario')
 
     # auth.js exporta funcoes globais
