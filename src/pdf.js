@@ -89,7 +89,42 @@ async function coletarDadosInspecao(inspecaoId) {
         .eq('inspecao_id', inspecaoId)
         .single();
 
-    return { inspecao, itensExecutados: ordenados, progresso: progresso || {} };
+    // --- Fase 8: itens avulsos (item_id NULL) ---
+    const { data: avulsos } = await window.sb
+        .from('inspecoes_itens')
+        .select('*')
+        .eq('inspecao_id', inspecaoId)
+        .is('item_id', null)
+        .order('id');
+
+    // --- Fase 8: orcamento (pecas + servicos + totais) ---
+    const { data: pecas } = await window.sb
+        .from('inspecao_pecas')
+        .select('*, pecas(codigo_re, descricao)')
+        .eq('inspecao_id', inspecaoId)
+        .order('id');
+
+    const { data: servicos } = await window.sb
+        .from('inspecao_servicos')
+        .select('*')
+        .eq('inspecao_id', inspecaoId)
+        .order('id');
+
+    const { data: totais } = await window.sb
+        .from('vw_orcamento_inspecao')
+        .select('*')
+        .eq('inspecao_id', inspecaoId)
+        .single();
+
+    return {
+        inspecao,
+        itensExecutados: ordenados,
+        progresso: progresso || {},
+        avulsos: avulsos || [],
+        pecas: pecas || [],
+        servicos: servicos || [],
+        totais: totais || null
+    };
 }
 
 /**
@@ -101,7 +136,7 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
     const onp = (msg) => { if (onProgresso) onProgresso(msg); };
 
     onp('Coletando dados...');
-    const { inspecao, itensExecutados, progresso } = await coletarDadosInspecao(inspecaoId);
+    const { inspecao, itensExecutados, progresso, avulsos, pecas, servicos, totais } = await coletarDadosInspecao(inspecaoId);
     const moto = inspecao.motos;
     const modelo = moto.modelos;
     const revisao = inspecao.revisoes;
@@ -155,6 +190,36 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
     doc.text(`Mecanico: ${inspecao.mecanico_nome || '-'}`, M + 60, y); y += 5;
     const resumo = `${progresso.total_itens || 0} itens · OK: ${progresso.ok_count || 0} · N-OK: ${progresso.nao_ok_count || 0} · N/A: ${progresso.na_count || 0}`;
     doc.text(resumo, M, y); y += 8;
+
+    // --- Fase 8: Bloco RELATO DO CLIENTE (antes do checklist) ---
+    if (inspecao.queixa_cliente || inspecao.resolucao_queixa) {
+        if (y > 230) { doc.addPage(); y = 20; }
+
+        doc.setFillColor(254, 243, 199);                 // amarelo claro
+        const alturaBloco = inspecao.resolucao_queixa ? 30 : 18;
+        doc.rect(M, y - 4, PDF_CONFIG.largura - 2 * M, alturaBloco, 'F');
+
+        doc.setTextColor(...PDF_CONFIG.cor_texto);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+        doc.text('RELATO DO CLIENTE', M + 2, y + 1); y += 6;
+
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        if (inspecao.queixa_cliente) {
+            const linhas = doc.splitTextToSize(inspecao.queixa_cliente, PDF_CONFIG.largura - 2 * M - 6);
+            doc.text(linhas, M + 2, y);
+            y += linhas.length * 4 + 3;
+        }
+
+        if (inspecao.resolucao_queixa) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+            doc.text('Resolucao:', M + 2, y); y += 4;
+            doc.setFont('helvetica', 'normal');
+            const linhasR = doc.splitTextToSize(inspecao.resolucao_queixa, PDF_CONFIG.largura - 2 * M - 6);
+            doc.text(linhasR, M + 2, y);
+            y += linhasR.length * 4 + 3;
+        }
+        y += 5;
+    }
 
     // --- Tabela de itens ---
     onp('Gerando tabela de itens...');
@@ -211,6 +276,145 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
         }
 
         y += Math.max(5, desc.length * 3);
+    }
+
+    // --- Fase 8: ITENS ADICIONAIS (achados fora do checklist) ---
+    if (avulsos && avulsos.length > 0) {
+        if (y > 235) { doc.addPage(); y = 20; }
+        y += 4;
+
+        doc.setFillColor(...PDF_CONFIG.cor_secundaria);
+        doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 6, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('ITENS ADICIONAIS (fora do checklist padrao)', M + 2, y + 4);
+        y += 8;
+
+        doc.setTextColor(...PDF_CONFIG.cor_texto);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+
+        const statusMapA = {
+            ok:     { txt: 'OK',   cor: PDF_CONFIG.cor_verde },
+            nao_ok: { txt: 'N-OK', cor: PDF_CONFIG.cor_vermelho },
+            na:     { txt: 'N/A',  cor: PDF_CONFIG.cor_cinza }
+        };
+
+        for (const av of avulsos) {
+            if (y > 255) { doc.addPage(); y = 20; }
+            const d = doc.splitTextToSize(av.descricao_avulsa || '-', 95);
+            doc.text(d, M + 2, y + 3);
+
+            const sa = statusMapA[av.status] || { txt: '-', cor: PDF_CONFIG.cor_cinza };
+            doc.setTextColor(...sa.cor); doc.setFont('helvetica', 'bold');
+            doc.text(sa.txt, M + 105, y + 3);
+            doc.setTextColor(...PDF_CONFIG.cor_texto); doc.setFont('helvetica', 'normal');
+
+            if (av.observacao) {
+                const o = doc.splitTextToSize(av.observacao, 65);
+                doc.text(o.slice(0, 2), M + 128, y + 3);
+            }
+            y += Math.max(5, d.length * 3);
+        }
+        y += 3;
+    }
+
+    // --- Fase 8: ORCAMENTO ---
+    const temOrcamento = (pecas && pecas.length > 0) || (servicos && servicos.length > 0);
+    if (temOrcamento) {
+        if (y > 210) { doc.addPage(); y = 20; }
+        y += 4;
+
+        doc.setFillColor(...PDF_CONFIG.cor_secundaria);
+        doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 6, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('ORCAMENTO', M + 2, y + 4);
+        doc.text('QTD', M + 110, y + 4);
+        doc.text('UNIT.', M + 130, y + 4);
+        doc.text('TOTAL', PDF_CONFIG.largura - M - 2, y + 4, { align: 'right' });
+        y += 8;
+
+        doc.setTextColor(...PDF_CONFIG.cor_texto);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+
+        const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR',
+            { style: 'currency', currency: 'BRL' });
+
+        // Pecas
+        if (pecas && pecas.length > 0) {
+            doc.setFillColor(240, 240, 240);
+            doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 5, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.text('Pecas', M + 2, y + 3.5);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+
+            for (const pc of pecas) {
+                if (y > 255) { doc.addPage(); y = 20; }
+                const nome = pc.pecas
+                    ? `${pc.pecas.codigo_re ? pc.pecas.codigo_re + ' - ' : ''}${pc.pecas.descricao}`
+                    : (pc.descricao_livre || '-');
+                const nomeTxt = doc.splitTextToSize(nome, 100);
+                doc.text(nomeTxt.slice(0, 1), M + 2, y + 3);
+                doc.text(String(Number(pc.quantidade) || 0), M + 110, y + 3);
+                doc.text(brl(pc.preco_aplicado), M + 130, y + 3);
+                doc.text(brl((pc.quantidade || 0) * (pc.preco_aplicado || 0)),
+                         PDF_CONFIG.largura - M - 2, y + 3, { align: 'right' });
+                y += 5;
+            }
+        }
+
+        // Servicos
+        if (servicos && servicos.length > 0) {
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFillColor(240, 240, 240);
+            doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 5, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.text('Mao de obra', M + 2, y + 3.5);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+
+            for (const sv of servicos) {
+                if (y > 255) { doc.addPage(); y = 20; }
+                const dTxt = doc.splitTextToSize(sv.descricao || '-', 100);
+                doc.text(dTxt.slice(0, 1), M + 2, y + 3);
+                doc.text(`${Number(sv.horas) || 0}h`, M + 110, y + 3);
+                doc.text(brl(sv.valor_hora), M + 130, y + 3);
+                doc.text(brl((sv.horas || 0) * (sv.valor_hora || 0)),
+                         PDF_CONFIG.largura - M - 2, y + 3, { align: 'right' });
+                y += 5;
+            }
+        }
+
+        // Total
+        if (y > 250) { doc.addPage(); y = 20; }
+        y += 2;
+        doc.setDrawColor(...PDF_CONFIG.cor_secundaria);
+        doc.setLineWidth(0.4);
+        doc.line(M, y, PDF_CONFIG.largura - M, y);
+        y += 5;
+
+        const tot = totais || { total_pecas: 0, total_servicos: 0, total_geral: 0 };
+        doc.setFontSize(9);
+        doc.text(`Pecas: ${brl(tot.total_pecas)}`, M + 2, y);
+        doc.text(`Mao de obra: ${brl(tot.total_servicos)}`, M + 55, y);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+        doc.text(`TOTAL: ${brl(tot.total_geral)}`,
+                 PDF_CONFIG.largura - M - 2, y, { align: 'right' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        y += 7;
+
+        // Aprovacao previa (CDC art. 40)
+        if (tot.orcamento_aprovado) {
+            doc.setTextColor(...PDF_CONFIG.cor_verde);
+            const dataAp = tot.orcamento_aprovado_em
+                ? new Date(tot.orcamento_aprovado_em).toLocaleString('pt-BR') : '';
+            doc.text(`Orcamento aprovado por ${tot.nome_aprovador_orcamento || '-'} em ${dataAp}`,
+                     M + 2, y);
+        } else {
+            doc.setTextColor(...PDF_CONFIG.cor_vermelho);
+            doc.text('Orcamento NAO aprovado pelo cliente', M + 2, y);
+        }
+        doc.setTextColor(...PDF_CONFIG.cor_texto);
+        y += 6;
     }
 
     // --- Fotos ---

@@ -70,6 +70,12 @@
         <input type="number" id="input-km" min="0" inputmode="numeric"
                class="w-full px-3 py-2.5 border border-slate-300 rounded-lg mb-4">
 
+        <label class="block text-sm font-medium text-slate-700 mb-1">
+            Relato do cliente <span class="text-slate-400 font-normal">(o que ele veio resolver)</span>
+        </label>
+        <textarea id="input-queixa" rows="3" placeholder="Ex: barulho na frente quando freia"
+               class="w-full px-3 py-2.5 border border-slate-300 rounded-lg mb-4 dark:bg-slate-700 dark:text-white"></textarea>
+
         <button onclick="iniciarInspecao()" id="btn-iniciar"
                 class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg">
             Iniciar inspeção
@@ -82,6 +88,36 @@
 <!-- ============================================================ -->
 <main id="view-execucao" class="p-4 max-w-2xl mx-auto pb-24 hidden">
     <div id="lista-itens"></div>
+
+    <!-- Fase 8: itens avulsos fora do checklist -->
+    <div id="bloco-avulsos" class="mt-4">
+        <div id="lista-avulsos" class="space-y-2 mb-3"></div>
+        <button onclick="abrirModalAvulso()"
+                class="w-full py-3 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg
+                       text-slate-600 dark:text-slate-300 font-medium hover:border-red-400 hover:text-red-600">
+            + Adicionar item fora do checklist
+        </button>
+    </div>
+
+    <!-- Fase 8: orcamento -->
+    <div id="bloco-orcamento" class="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900 dark:text-white">Orçamento</h3>
+            <span id="orcamento-total" class="font-bold text-red-600">R$ 0,00</span>
+        </div>
+        <div id="lista-orcamento" class="space-y-1 text-sm mb-3"></div>
+        <div class="flex gap-2">
+            <button onclick="abrirModalPeca()"
+                    class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg text-sm font-medium">
+                + Peça
+            </button>
+            <button onclick="abrirModalServico()"
+                    class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg text-sm font-medium">
+                + Mão de obra
+            </button>
+        </div>
+        <p id="orcamento-aviso" class="text-xs mt-2 text-slate-500"></p>
+    </div>
 
     <!-- Footer sticky com botao finalizar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 shadow-lg">
@@ -102,6 +138,17 @@
 <!-- TELA 3: FINALIZACAO (com assinaturas)                          -->
 <!-- ============================================================ -->
 <main id="view-finalizacao" class="p-4 max-w-2xl mx-auto hidden">
+    <!-- Fase 8: resolucao da queixa -->
+    <div id="bloco-resolucao" class="bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-600 rounded-xl p-4 mb-4 hidden">
+        <h3 class="font-bold text-slate-900 dark:text-white mb-1">Relato do cliente</h3>
+        <p id="texto-queixa" class="text-sm text-slate-700 dark:text-slate-300 mb-3"></p>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+            O que foi encontrado e feito
+        </label>
+        <textarea id="input-resolucao" rows="3" placeholder="Ex: pastilha dianteira gasta (1,2mm), substituída"
+               class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg"></textarea>
+    </div>
+
     <div class="bg-white rounded-xl p-5 shadow-sm mb-4">
         <h2 class="font-bold text-slate-900 mb-4">Resumo da inspeção</h2>
         <div id="resumo-detalhes" class="grid grid-cols-3 gap-3 text-center mb-4">
@@ -216,6 +263,9 @@
 <script src="./src/status_offline.js"></script>
 <script src="./src/camera.js"></script>
 <script src="./src/assinatura.js"></script>
+<script src="./src/medicoes.js"></script>
+<script src="./src/avulsos.js"></script>
+<script src="./src/orcamento.js"></script>
 <script src="./src/pdf.js"></script>
 <script src="./src/darkmode.js"></script>
 <script src="./src/i18n.js"></script>
@@ -337,7 +387,8 @@ async function iniciarInspecao() {
                     revisao_id: revisaoId,
                     km_registrado: km,
                     mecanico_id: usuario.id,
-                    mecanico_nome: nomeMec
+                    mecanico_nome: nomeMec,
+                    queixa_cliente: (document.getElementById('input-queixa')?.value || '').trim() || null
                 });
             } else {
                 inspecao = existente;
@@ -347,6 +398,7 @@ async function iniciarInspecao() {
                 moto_id: window.estadoInspecao.moto.id,
                 revisao_id: revisaoId,
                 km_registrado: km,
+                queixa_cliente: (document.getElementById('input-queixa')?.value || '').trim() || null,
                 mecanico_id: usuario.id,
                 mecanico_nome: nomeMec
             });
@@ -356,6 +408,10 @@ async function iniciarInspecao() {
 
         await carregarChecklist();
         mostrarView('view-execucao');
+
+        // Fase 8: carrega itens avulsos e orcamento desta inspecao
+        if (window.avulsos)   recarregarAvulsos().catch(e => console.warn(e));
+        if (window.orcamento) recarregarOrcamento().catch(e => console.warn(e));
         atualizarHeader();
     } catch (e) {
         console.error(e);
@@ -417,11 +473,19 @@ function renderItem(item) {
 
         ${item.exige_medicao ? `
         <div class="mt-2">
-            <label class="text-xs text-slate-600">Valor medido</label>
+            <label class="text-xs text-slate-600 dark:text-slate-300">
+                Valor medido${item.unidade ? ` (${item.unidade})` : ''}
+            </label>
             <input type="text" id="${idBase}-medida" value="${r.valor_medido || ''}"
                    oninput="marcarMedida(${item.id}, this.value)"
-                   class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm"
-                   placeholder="ex: 0,75 mm">
+                   inputmode="decimal"
+                   class="w-full px-2 py-1.5 border-2 border-slate-300 rounded text-sm transition-colors"
+                   placeholder="${item.limite_minimo != null ? 'ex: ' + item.limite_minimo : 'ex: 0,75'}">
+            <div class="flex justify-between mt-0.5">
+                <span id="${idBase}-semaforo" class="text-xs font-medium"></span>
+                <span class="text-xs text-slate-400">${window.medicoes ? window.medicoes.textoReferencia(item) : ''}</span>
+            </div>
+            <div id="${idBase}-desgaste" class="text-xs text-blue-600 mt-0.5"></div>
         </div>` : ''}
 
         <div class="mt-2">
@@ -459,11 +523,41 @@ function marcarStatus(itemId, status) {
 }
 
 function marcarMedida(itemId, valor) {
+    // Fase 8: avalia contra os limites e pinta o campo
+    const item = (window.estadoInspecao.itens || []).find(i => i.id === itemId);
+    const inputEl = document.getElementById(`item-${itemId}-medida`);
+    const fbEl = document.getElementById(`item-${itemId}-semaforo`);
+
+    let numerico = null;
+    if (item && window.medicoes) {
+        const res = window.medicoes.aplicarSemaforo(inputEl, item, fbEl);
+        numerico = res.valor;
+    }
+
     autosaveStatus('salvando…', 'salvando');
-    window.agendarSalvamento(itemId, { valor_medido: valor }, {
-        onSalvo: () => autosaveStatus('salvo ✓', 'salvo'),
+    window.agendarSalvamento(itemId, {
+        valor_medido: valor,
+        valor_numerico: numerico
+    }, {
+        onSalvo: () => { autosaveStatus('salvo ✓', 'salvo'); mostrarDesgaste(itemId, item); },
         onErro: () => autosaveStatus('erro ao salvar', 'erro')
     });
+}
+
+/**
+ * Fase 8: busca a taxa de desgaste deste item nas inspecoes anteriores
+ * e mostra a previsao de troca abaixo do campo.
+ */
+async function mostrarDesgaste(itemId, item) {
+    if (!item || !item.chave_medicao || !window.medicoes) return;
+    const el = document.getElementById(`item-${itemId}-desgaste`);
+    if (!el) return;
+
+    const motoId = window.estadoInspecao.moto?.id;
+    if (!motoId) return;
+
+    const d = await window.medicoes.buscarDesgaste(motoId, item.chave_medicao);
+    el.textContent = d ? window.medicoes.formatarPrevisao(d) : '';
 }
 
 function marcarObs(itemId, valor) {
@@ -556,6 +650,18 @@ async function prepararFinalizacao() {
     const nomeMec = window.estadoInspecao.inspecao.mecanico_nome || usuario.user_metadata?.nome_completo || usuario.email;
     document.getElementById('nome-mecanico').textContent = nomeMec;
 
+    // Fase 8: exibe a queixa do cliente para o mecanico responder
+    const queixa = window.estadoInspecao.inspecao.queixa_cliente;
+    const blocoRes = document.getElementById('bloco-resolucao');
+    if (queixa) {
+        document.getElementById('texto-queixa').textContent = queixa;
+        document.getElementById('input-resolucao').value =
+            window.estadoInspecao.inspecao.resolucao_queixa || '';
+        blocoRes.classList.remove('hidden');
+    } else {
+        blocoRes.classList.add('hidden');
+    }
+
     mostrarView('view-finalizacao');
 
     // Inicializa canvases (precisa estar visivel para ter tamanho)
@@ -575,7 +681,10 @@ function inicializarAssinaturas() {
 function limparAssinaturaMecanico() { if (assinaturaMec) assinaturaMec.limpar(); }
 function limparAssinaturaCliente() { if (assinaturaCli) assinaturaCli.limpar(); }
 
-function voltarParaExecucao() { mostrarView('view-execucao'); }
+function voltarParaExecucao() {
+    mostrarView('view-execucao');
+    if (window.orcamento) recarregarOrcamento().catch(e => console.warn(e));
+}
 
 async function confirmarFinalizacao() {
     // Validacoes de assinatura + nome
@@ -583,6 +692,16 @@ async function confirmarFinalizacao() {
     if (!nomeCliente) { toast('Informe o nome do cliente', 'erro'); return; }
     if (!assinaturaMec || !assinaturaMec.foiTocado()) { toast('Falta assinatura do mecânico', 'erro'); return; }
     if (!assinaturaCli || !assinaturaCli.foiTocado()) { toast('Falta assinatura do cliente', 'erro'); return; }
+
+    // Fase 8: orcamento com valor precisa de aprovacao previa (CDC art. 40)
+    if (window.orcamento) {
+        const estOrc = await window.orcamento.podeExecutar(window.estadoInspecao.inspecao.id);
+        if (!estOrc.pode) {
+            toast(estOrc.motivo, 'erro');
+            abrirModalAprovacao();
+            return;
+        }
+    }
 
     const btn = document.getElementById('btn-confirmar-fim');
     btn.disabled = true; btn.textContent = 'Processando...';
@@ -597,6 +716,7 @@ async function confirmarFinalizacao() {
             status: 'finalizada',
             data_fim: new Date().toISOString(),
             observacoes_gerais: obs || null,
+            resolucao_queixa: (document.getElementById('input-resolucao')?.value || '').trim() || null,
             assinatura_mecanico: assinaturaMecPng,
             assinatura_cliente: assinaturaCliPng,
             nome_cliente_assinou: nomeCliente
@@ -705,6 +825,384 @@ function preencherPlacaViaUrl() {
     }
 }
 window.addEventListener('load', () => setTimeout(preencherPlacaViaUrl, 500));
+</script>
+
+<!-- ============================================================ -->
+<!-- FASE 8: MODAIS                                                -->
+<!-- ============================================================ -->
+<div id="modal-avulso" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-3 dark:text-white">Item fora do checklist</h3>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">O que foi encontrado</label>
+    <input id="avulso-descricao" placeholder="Ex: retrovisor direito folgado"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-3">
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Categoria</label>
+    <select id="avulso-categoria"
+            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-3"></select>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Observação</label>
+    <textarea id="avulso-obs" rows="2"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-4"></textarea>
+    <div class="flex gap-2">
+      <button onclick="fecharModal('modal-avulso')" class="flex-1 py-2 border border-slate-300 dark:border-slate-600 dark:text-white rounded-lg">Cancelar</button>
+      <button onclick="salvarAvulso()" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-peca" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-3 dark:text-white">Adicionar peça</h3>
+    <input id="peca-busca" placeholder="Buscar no catálogo..." oninput="buscarPecaCatalogo()"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-2">
+    <div id="peca-resultados" class="max-h-40 overflow-y-auto mb-3"></div>
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <div>
+        <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Quantidade</label>
+        <input id="peca-qtd" type="number" value="1" min="0.1" step="0.1" inputmode="decimal"
+               class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Preço unitário</label>
+        <input id="peca-preco" type="number" value="0" min="0" step="0.01" inputmode="decimal"
+               class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg">
+      </div>
+    </div>
+    <p id="peca-selecionada" class="text-xs text-slate-500 mb-3"></p>
+    <div class="flex gap-2">
+      <button onclick="fecharModal('modal-peca')" class="flex-1 py-2 border border-slate-300 dark:border-slate-600 dark:text-white rounded-lg">Cancelar</button>
+      <button onclick="salvarPeca()" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-servico" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-3 dark:text-white">Mão de obra</h3>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Descrição do serviço</label>
+    <input id="servico-descricao" placeholder="Ex: troca de pastilhas + sangria"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-3">
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <div>
+        <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Horas</label>
+        <input id="servico-horas" type="number" value="1" min="0.25" step="0.25" inputmode="decimal"
+               class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Valor/hora</label>
+        <input id="servico-valor-hora" type="number" value="120" min="0" step="1" inputmode="decimal"
+               class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg">
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="fecharModal('modal-servico')" class="flex-1 py-2 border border-slate-300 dark:border-slate-600 dark:text-white rounded-lg">Cancelar</button>
+      <button onclick="salvarServico()" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-aprovacao" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-1 dark:text-white">Aprovação do orçamento</h3>
+    <p class="text-xs text-slate-500 mb-3">
+      O cliente precisa autorizar antes da execução (CDC art. 40).
+    </p>
+    <p id="aprovacao-total" class="text-center text-2xl font-bold text-red-600 mb-3">R$ 0,00</p>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Nome de quem aprova</label>
+    <input id="aprovacao-nome"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-3">
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Assinatura</label>
+    <canvas id="canvas-aprovacao" class="canvas-assinatura w-full border border-slate-300 rounded-lg mb-2" style="height:140px"></canvas>
+    <button onclick="limparAprovacao()" class="text-xs text-slate-500 mb-3">Limpar assinatura</button>
+    <div class="flex gap-2">
+      <button onclick="fecharModal('modal-aprovacao')" class="flex-1 py-2 border border-slate-300 dark:border-slate-600 dark:text-white rounded-lg">Depois</button>
+      <button onclick="salvarAprovacao()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-medium">Aprovar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// FASE 8 :: estado e helpers
+// ============================================================
+let _pecasInsp = [];
+let _servicosInsp = [];
+let _avulsosInsp = [];
+let _pecaEscolhida = null;
+let _assinAprovacao = null;
+
+function abrirModal(id) {
+    const m = document.getElementById(id);
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+}
+function fecharModal(id) {
+    const m = document.getElementById(id);
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+}
+
+// ============================================================
+// ITENS AVULSOS
+// ============================================================
+function abrirModalAvulso() {
+    const sel = document.getElementById('avulso-categoria');
+    if (sel.options.length === 0) {
+        window.avulsos.CATEGORIAS_SUGERIDAS.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c; o.textContent = c;
+            sel.appendChild(o);
+        });
+        sel.value = 'Adicional';
+    }
+    document.getElementById('avulso-descricao').value = '';
+    document.getElementById('avulso-obs').value = '';
+    abrirModal('modal-avulso');
+}
+
+async function salvarAvulso() {
+    const desc = document.getElementById('avulso-descricao').value.trim();
+    if (desc.length < 3) { alert('Descreva o item encontrado'); return; }
+    try {
+        await window.avulsos.adicionarAvulso(inspecaoAtual.id, {
+            descricao: desc,
+            categoria: document.getElementById('avulso-categoria').value,
+            status: 'nao_ok',
+            observacao: document.getElementById('avulso-obs').value.trim() || null
+        });
+        fecharModal('modal-avulso');
+        await recarregarAvulsos();
+    } catch (e) {
+        alert('Erro ao adicionar: ' + (e.message || e));
+    }
+}
+
+async function recarregarAvulsos() {
+    _avulsosInsp = await window.avulsos.listarAvulsos(inspecaoAtual.id);
+    const cont = document.getElementById('lista-avulsos');
+    if (_avulsosInsp.length === 0) { cont.innerHTML = ''; return; }
+
+    cont.innerHTML = `
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-white mb-2">
+          Itens adicionais (${_avulsosInsp.length})
+        </h3>
+        ${_avulsosInsp.map(a => `
+          <div class="flex items-start justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+            <div class="flex-1 pr-2">
+              <p class="text-sm text-slate-800 dark:text-slate-100">${escapeHtml(a.descricao_avulsa)}</p>
+              ${a.observacao ? `<p class="text-xs text-slate-500">${escapeHtml(a.observacao)}</p>` : ''}
+            </div>
+            <button onclick="excluirAvulso(${a.id})" class="text-slate-400 hover:text-red-600 text-lg leading-none">&times;</button>
+          </div>`).join('')}
+      </div>`;
+}
+
+async function excluirAvulso(id) {
+    if (!confirm('Remover este item?')) return;
+    try {
+        await window.avulsos.removerAvulso(id);
+        await recarregarAvulsos();
+    } catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+// ============================================================
+// ORCAMENTO
+// ============================================================
+function abrirModalPeca() {
+    _pecaEscolhida = null;
+    document.getElementById('peca-busca').value = '';
+    document.getElementById('peca-resultados').innerHTML = '';
+    document.getElementById('peca-selecionada').textContent = '';
+    document.getElementById('peca-qtd').value = 1;
+    document.getElementById('peca-preco').value = 0;
+    abrirModal('modal-peca');
+}
+
+async function buscarPecaCatalogo() {
+    const termo = document.getElementById('peca-busca').value.trim();
+    const cont = document.getElementById('peca-resultados');
+    if (termo.length < 2) { cont.innerHTML = ''; return; }
+
+    const modeloId = motoAtual && motoAtual.modelo_id ? motoAtual.modelo_id : null;
+    const res = await window.orcamento.buscarPecas(termo, modeloId);
+
+    if (res.length === 0) {
+        cont.innerHTML = `<p class="text-xs text-slate-500 p-2">
+            Nada no catálogo. Será adicionada como peça avulsa "${escapeHtml(termo)}".</p>`;
+        return;
+    }
+    cont.innerHTML = res.map(p => `
+      <button onclick="escolherPeca(${p.id}, '${escapeHtml(p.descricao).replace(/'/g, "\\'")}', ${p.preco_unitario})"
+              class="w-full text-left px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-sm dark:text-white">
+        ${p.codigo_re ? `<span class="text-xs text-slate-400">${p.codigo_re}</span> ` : ''}
+        ${escapeHtml(p.descricao)}
+        <span class="text-red-600 font-medium">${window.orcamento.formatarMoeda(p.preco_unitario)}</span>
+      </button>`).join('');
+}
+
+function escolherPeca(id, descricao, preco) {
+    _pecaEscolhida = { id, descricao, preco };
+    document.getElementById('peca-preco').value = preco;
+    document.getElementById('peca-selecionada').textContent = 'Selecionada: ' + descricao;
+    document.getElementById('peca-resultados').innerHTML = '';
+    document.getElementById('peca-busca').value = descricao;
+}
+
+async function salvarPeca() {
+    const qtd = parseFloat(document.getElementById('peca-qtd').value) || 1;
+    const preco = parseFloat(document.getElementById('peca-preco').value) || 0;
+    const termo = document.getElementById('peca-busca').value.trim();
+
+    if (!_pecaEscolhida && termo.length < 3) {
+        alert('Escolha uma peça ou descreva a peça avulsa');
+        return;
+    }
+    try {
+        await window.orcamento.adicionarPeca(inspecaoAtual.id, {
+            pecaId: _pecaEscolhida ? _pecaEscolhida.id : null,
+            descricaoLivre: _pecaEscolhida ? null : termo,
+            quantidade: qtd,
+            precoUnitario: preco
+        });
+        fecharModal('modal-peca');
+        await recarregarOrcamento();
+    } catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+function abrirModalServico() {
+    document.getElementById('servico-descricao').value = '';
+    document.getElementById('servico-horas').value = 1;
+    document.getElementById('servico-valor-hora').value = window.orcamento.VALOR_HORA_PADRAO;
+    abrirModal('modal-servico');
+}
+
+async function salvarServico() {
+    const desc = document.getElementById('servico-descricao').value.trim();
+    if (desc.length < 3) { alert('Descreva o serviço'); return; }
+    try {
+        await window.orcamento.adicionarServico(inspecaoAtual.id, {
+            descricao: desc,
+            horas: parseFloat(document.getElementById('servico-horas').value) || 0,
+            valorHora: parseFloat(document.getElementById('servico-valor-hora').value) || 0
+        });
+        fecharModal('modal-servico');
+        await recarregarOrcamento();
+    } catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+async function recarregarOrcamento() {
+    _pecasInsp = await window.orcamento.listarPecasDaInspecao(inspecaoAtual.id);
+    _servicosInsp = await window.orcamento.listarServicosDaInspecao(inspecaoAtual.id);
+    const t = window.orcamento.calcularTotaisLocal(_pecasInsp, _servicosInsp);
+
+    document.getElementById('orcamento-total').textContent =
+        window.orcamento.formatarMoeda(t.total_geral);
+
+    const cont = document.getElementById('lista-orcamento');
+    const linhas = [];
+
+    _pecasInsp.forEach(p => {
+        const nome = p.pecas ? p.pecas.descricao : (p.descricao_livre || '-');
+        const sub = (p.quantidade || 0) * (p.preco_aplicado || 0);
+        linhas.push(`
+          <div class="flex justify-between items-center dark:text-slate-200">
+            <span>${p.quantidade}x ${escapeHtml(nome)}</span>
+            <span class="flex items-center gap-2">
+              ${window.orcamento.formatarMoeda(sub)}
+              <button onclick="excluirPeca(${p.id})" class="text-slate-400 hover:text-red-600">&times;</button>
+            </span>
+          </div>`);
+    });
+
+    _servicosInsp.forEach(s => {
+        const sub = (s.horas || 0) * (s.valor_hora || 0);
+        linhas.push(`
+          <div class="flex justify-between items-center dark:text-slate-200">
+            <span>${s.horas}h ${escapeHtml(s.descricao)}</span>
+            <span class="flex items-center gap-2">
+              ${window.orcamento.formatarMoeda(sub)}
+              <button onclick="excluirServico(${s.id})" class="text-slate-400 hover:text-red-600">&times;</button>
+            </span>
+          </div>`);
+    });
+
+    cont.innerHTML = linhas.length
+        ? linhas.join('')
+        : '<p class="text-xs text-slate-500">Nenhuma peça ou serviço lançado</p>';
+
+    // Aviso de aprovação pendente
+    const aviso = document.getElementById('orcamento-aviso');
+    if (t.total_geral > 0) {
+        const est = await window.orcamento.podeExecutar(inspecaoAtual.id);
+        if (est.pode) {
+            aviso.textContent = est.motivo;
+            aviso.className = 'text-xs mt-2 text-green-600';
+        } else {
+            aviso.innerHTML = `${escapeHtml(est.motivo)} —
+                <button onclick="abrirModalAprovacao()" class="underline font-medium">coletar aprovação</button>`;
+            aviso.className = 'text-xs mt-2 text-amber-600';
+        }
+    } else {
+        aviso.textContent = '';
+    }
+}
+
+async function excluirPeca(id) {
+    try { await window.orcamento.removerPeca(id); await recarregarOrcamento(); }
+    catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+async function excluirServico(id) {
+    try { await window.orcamento.removerServico(id); await recarregarOrcamento(); }
+    catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+// ============================================================
+// APROVACAO PREVIA DO ORCAMENTO (CDC art. 40)
+// ============================================================
+function abrirModalAprovacao() {
+    const t = window.orcamento.calcularTotaisLocal(_pecasInsp, _servicosInsp);
+    document.getElementById('aprovacao-total').textContent =
+        window.orcamento.formatarMoeda(t.total_geral);
+    document.getElementById('aprovacao-nome').value =
+        (motoAtual && motoAtual.proprietario) ? motoAtual.proprietario : '';
+    abrirModal('modal-aprovacao');
+
+    setTimeout(() => {
+        if (!_assinAprovacao) {
+            _assinAprovacao = window.criarAssinatura('canvas-aprovacao');
+        }
+    }, 120);
+}
+
+function limparAprovacao() {
+    if (_assinAprovacao) _assinAprovacao.limpar();
+}
+
+async function salvarAprovacao() {
+    if (!_assinAprovacao || !_assinAprovacao.foiTocado()) {
+        alert('Colete a assinatura do cliente');
+        return;
+    }
+    const nome = document.getElementById('aprovacao-nome').value.trim();
+    if (nome.length < 3) { alert('Informe o nome de quem aprova'); return; }
+
+    try {
+        await window.orcamento.aprovarOrcamento(
+            inspecaoAtual.id, _assinAprovacao.exportarPng(), nome);
+        fecharModal('modal-aprovacao');
+        await recarregarOrcamento();
+    } catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 </script>
 </body>
 </html>

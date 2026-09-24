@@ -71,12 +71,13 @@ async function listarRevisoesDoModelo(modeloId) {
 // ================================================================
 // CRIACAO DA INSPECAO
 // ================================================================
-async function criarInspecao({ moto_id, revisao_id, km_registrado, mecanico_id, mecanico_nome }) {
+async function criarInspecao({ moto_id, revisao_id, km_registrado, mecanico_id, mecanico_nome, queixa_cliente }) {
     const { data, error } = await window.sb
         .from('inspecoes')
         .insert({
             moto_id, revisao_id, km_registrado,
             mecanico_id, mecanico_nome,
+            queixa_cliente: queixa_cliente || null,
             status: 'em_andamento'
         })
         .select()
@@ -113,7 +114,7 @@ async function carregarItensDaRevisao(revisaoId) {
 async function carregarRespostasSalvas(inspecaoId) {
     const { data, error } = await window.sb
         .from('inspecoes_itens')
-        .select('item_id, status, valor_medido, observacao, foto_url')
+        .select('item_id, status, valor_medido, valor_numerico, observacao, foto_url')
         .eq('inspecao_id', inspecaoId);
     if (error) throw error;
     const mapa = {};

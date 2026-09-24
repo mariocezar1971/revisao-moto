@@ -75,8 +75,22 @@ Depois: configurar `.env` e `usuarios.json`, rodar `scripts/setup_fase1.py`, apl
 | **Fase 5** | Historico, filtros, CSV, relatorios | OK | 80 |
 | **Fase 6** | Offline completo (IndexedDB, sync queue) | OK | 83 |
 | **Fase 7** | Polimento: icones, onboarding, QR, specs, notifs, dark mode, i18n | OK | 122 |
+| **Fase 8 (P1)** | Operacao real: medicao numerica, queixa do cliente, itens avulsos, orcamento | OK | 145 |
 
-**Total: 633 testes automatizados** via `./tests/run_tests.sh`.
+**Total: 778 testes automatizados** via `./tests/run_tests.sh`.
+
+### Fase 8 (P1) em detalhe
+
+| Item | O que resolve |
+|---|---|
+| Medicao numerica com limites | `valor_medido` era texto livre. Agora o app compara com limite de servico e pinta verde/amarelo/vermelho, e calcula a previsao de troca comparando com a revisao anterior |
+| Queixa do cliente | O motivo real da visita ("barulho ao frear") nao estava em checklist nenhum. Agora abre a inspecao e abre o PDF |
+| Itens avulsos | O checklist eh fixo por revisao. Agora o mecanico registra achados fora da lista na mesma inspecao |
+| Pecas e orcamento | Pecas, mao de obra, total no PDF e assinatura de aprovacao previa separada da de conclusao (CDC art. 40) |
+
+Chave de projeto: `itens_checklist.chave_medicao` identifica o mesmo item fisico entre revisoes.
+A descricao muda ("Inspecao de pastilhas dianteiras" no 500 km vira "Pastilhas dianteiras - espessura"
+no 5.000 km+), entao casar por texto quebraria o calculo de desgaste.
 
 ---
 

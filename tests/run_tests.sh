@@ -8,7 +8,9 @@
 # Uso:  ./tests/run_tests.sh
 # =====================================================================
 
-set -e
+# Sem 'set -e': queremos rodar TODAS as suites e so no fim somar os exit codes.
+# Uma fase que falha nao deve impedir o diagnostico das seguintes.
+set -uo pipefail
 
 # Detecta diretorio raiz
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
@@ -134,12 +136,21 @@ PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test
     python3 "$RAIZ/tests/test_fase7.py"
 EXIT_F7=$?
 
-EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 + EXIT_F7 ))
+echo ""
+echo "----------------------------------------"
+echo ""
+
+# Fase 8 (P1 - Operacao Real: medicoes, queixa, avulsos, orcamento)
+PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test \
+    python3 "$RAIZ/tests/test_fase8.py"
+EXIT_F8=$?
+
+EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 + EXIT_F7 + EXIT_F8 ))
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then
     echo "=========================================="
-    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 7)"
+    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 8)"
     echo "=========================================="
 else
     echo "=========================================="
@@ -152,6 +163,7 @@ else
     echo "  Fase 5 exit: $EXIT_F5"
     echo "  Fase 6 exit: $EXIT_F6"
     echo "  Fase 7 exit: $EXIT_F7"
+    echo "  Fase 8 exit: $EXIT_F8"
     echo "=========================================="
 fi
 

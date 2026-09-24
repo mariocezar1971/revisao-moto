@@ -17,8 +17,8 @@ function criarBadge() {
     statusEl.id = 'status-offline-badge';
     statusEl.style.cssText = `
         position: fixed;
-        bottom: 12px;
-        left: 12px;
+        top: 12px;
+        right: 12px;
         z-index: 60;
         display: flex;
         align-items: center;

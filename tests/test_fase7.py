@@ -320,7 +320,12 @@ def t_especificacoes():
 def t_service_worker():
     cabecalho("10. SERVICE WORKER v0.7.0")
     sw = (RAIZ / 'service-worker.js').read_text()
-    teste("Versao v0.7.x", 'v0.7' in sw)
+    # Aceita v0.7+ (a versao avanca a cada fase que muda o cache)
+    m = re.search(r"CACHE_VERSION\s*=\s*'v0\.(\d+)", sw)
+    maior = int(m.group(1)) if m else 0
+    teste("Versao v0.7+", maior >= 7,
+          re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw).group(1)
+          if re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw) else '?')
     for f in ['onboarding.html', 'especificacoes.html', 'qrcode.html',
               'darkmode.js', 'i18n.js', 'qrcode.js', 'notifications.js',
               'icon-512-maskable.png', 'i18n/pt.json', 'i18n/en.json',
