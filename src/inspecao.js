@@ -114,7 +114,7 @@ async function carregarItensDaRevisao(revisaoId) {
 async function carregarRespostasSalvas(inspecaoId) {
     const { data, error } = await window.sb
         .from('inspecoes_itens')
-        .select('item_id, status, valor_medido, valor_numerico, observacao, foto_url')
+        .select('item_id, status, valor_medido, valor_numerico, observacao, foto_url, foto_antes_url, foto_depois_url')
         .eq('inspecao_id', inspecaoId);
     if (error) throw error;
     const mapa = {};

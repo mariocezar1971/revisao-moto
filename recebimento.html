@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#dc2626">
+  <title>Recebimento · Revisão Moto</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: "class" };</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen">
+
+<header class="header-app p-4 dark:bg-slate-800">
+  <div class="flex items-center gap-3 max-w-2xl mx-auto">
+    <a href="./index.html" class="text-slate-300 hover:text-white text-xl">←</a>
+    <div>
+      <h1 class="text-lg font-bold text-white">Recebimento da moto</h1>
+      <p class="text-xs text-slate-300">Vistoria de entrada, antes do serviço</p>
+    </div>
+  </div>
+</header>
+
+<!-- TELA 1: escolher a moto -->
+<main id="view-moto" class="p-4 max-w-2xl mx-auto">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm">
+    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Placa</label>
+    <input id="busca-placa" placeholder="Digite a placa" autocomplete="off"
+           oninput="buscarMoto()"
+           class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg uppercase text-base">
+    <div id="resultados-moto" class="mt-2"></div>
+
+    <div id="moto-escolhida" class="hidden mt-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+      <p id="moto-info" class="font-medium text-slate-900 dark:text-white"></p>
+      <label class="block text-sm text-slate-700 dark:text-slate-200 mt-3 mb-1">Km de entrada</label>
+      <input type="number" id="km-entrada" inputmode="numeric"
+             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg">
+      <button onclick="iniciarRecebimento()" id="btn-iniciar"
+              class="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg">
+        Iniciar vistoria
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- TELA 2: vistoria -->
+<main id="view-vistoria" class="p-4 max-w-2xl mx-auto pb-28 hidden">
+
+  <!-- 4 fotos obrigatórias -->
+  <section class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold text-slate-900 dark:text-white">Fotos da moto</h2>
+      <span id="contador-fotos" class="text-sm font-medium text-amber-600">0 de 4</span>
+    </div>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+      As 4 fotos são obrigatórias. São elas que protegem você e o cliente.
+    </p>
+    <div id="grade-fotos" class="grid grid-cols-2 gap-3"></div>
+  </section>
+
+  <!-- Avarias -->
+  <section class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <h2 class="font-bold text-slate-900 dark:text-white mb-2">Avarias encontradas</h2>
+    <textarea id="avarias-texto" rows="3" oninput="salvarCampo('avarias_texto', this.value)"
+           placeholder="Ex: risco de 10cm no tanque lado direito, retrovisor esquerdo trincado"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm"></textarea>
+
+    <div class="mt-3">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-slate-700 dark:text-slate-200">Marcações</span>
+        <button onclick="abrirModalMarcacao()" class="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 dark:text-white rounded">
+          + Marcar ponto
+        </button>
+      </div>
+      <div id="lista-marcacoes" class="space-y-1"></div>
+    </div>
+  </section>
+
+  <!-- Combustível -->
+  <section class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <h2 class="font-bold text-slate-900 dark:text-white mb-3">Nível de combustível</h2>
+    <div id="niveis-combustivel" class="grid grid-cols-5 gap-2"></div>
+  </section>
+
+  <!-- Acessórios -->
+  <section class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <h2 class="font-bold text-slate-900 dark:text-white mb-3">Acessórios recebidos</h2>
+    <div class="space-y-2">
+      <label class="flex items-center gap-3 py-1">
+        <input type="checkbox" id="tem-bau" onchange="salvarCampo('tem_bau', this.checked)"
+               class="w-5 h-5 rounded border-slate-300">
+        <span class="text-slate-800 dark:text-slate-100">Baú / bagageiro</span>
+      </label>
+      <label class="flex items-center gap-3 py-1">
+        <input type="checkbox" id="tem-capacete" onchange="salvarCampo('tem_capacete', this.checked)"
+               class="w-5 h-5 rounded border-slate-300">
+        <span class="text-slate-800 dark:text-slate-100">Capacete</span>
+      </label>
+      <label class="flex items-center gap-3 py-1">
+        <input type="checkbox" id="tem-documentos" onchange="salvarCampo('tem_documentos', this.checked)"
+               class="w-5 h-5 rounded border-slate-300">
+        <span class="text-slate-800 dark:text-slate-100">Documentos</span>
+      </label>
+    </div>
+    <input id="outros-acessorios" placeholder="Outros acessórios"
+           oninput="salvarCampo('outros_acessorios', this.value)"
+           class="w-full mt-3 px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm">
+  </section>
+
+  <!-- Assinatura -->
+  <section class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <h2 class="font-bold text-slate-900 dark:text-white mb-1">Assinatura do cliente</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+      O cliente confirma que a moto foi entregue no estado acima.
+    </p>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Nome de quem entrega</label>
+    <input id="nome-cliente" placeholder="Nome completo"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-3">
+    <canvas id="canvas-entrada" class="canvas-assinatura w-full border border-slate-300 rounded-lg" style="height:150px"></canvas>
+    <button onclick="limparAssinatura()" class="text-xs text-slate-500 mt-1">Limpar assinatura</button>
+  </section>
+
+  <!-- Footer -->
+  <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-3 shadow-lg">
+    <div class="max-w-2xl mx-auto">
+      <p id="status-validacao" class="text-xs text-center mb-2 text-amber-600"></p>
+      <button onclick="concluirRecebimento()" id="btn-concluir"
+              class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50">
+        Concluir vistoria
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- TELA 3: concluído -->
+<main id="view-pronto" class="p-4 max-w-2xl mx-auto hidden">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm text-center">
+    <div class="text-5xl mb-3">✓</div>
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Vistoria registrada</h2>
+    <p class="text-slate-600 dark:text-slate-300 mb-5">
+      A moto foi recebida e o estado de entrada está documentado.
+    </p>
+    <a id="link-inspecao" href="#"
+       class="block w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg mb-2">
+      Iniciar inspeção
+    </a>
+    <a href="./index.html"
+       class="block w-full border border-slate-300 dark:border-slate-600 dark:text-white py-3 rounded-lg">
+      Voltar ao início
+    </a>
+  </div>
+</main>
+
+<!-- Modal de marcação -->
+<div id="modal-marcacao" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-sm">
+    <h3 class="font-bold text-lg mb-3 dark:text-white">Marcar avaria</h3>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Local</label>
+    <select id="marcacao-lado"
+            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-3">
+      <option value="frente">Frente</option>
+      <option value="tras">Traseira</option>
+      <option value="esq">Lado esquerdo</option>
+      <option value="dir">Lado direito</option>
+      <option value="tanque">Tanque</option>
+      <option value="banco">Banco</option>
+    </select>
+    <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">O que há ali</label>
+    <input id="marcacao-nota" placeholder="Ex: risco de 10cm"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-4">
+    <div class="flex gap-2">
+      <button onclick="fecharModalMarcacao()" class="flex-1 py-2 border border-slate-300 dark:border-slate-600 dark:text-white rounded-lg">Cancelar</button>
+      <button onclick="salvarMarcacao()" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/offline.js"></script>
+<script src="./src/status_offline.js"></script>
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
+<script src="./src/camera.js"></script>
+<script src="./src/assinatura.js"></script>
+<script src="./src/recebimento.js"></script>
+<script>
+let motoAtual = null;
+let recAtual = null;
+let assinEntrada = null;
+let marcacoes = [];
+
+async function boot() {
+  await exigirLogin();
+  montarNiveisCombustivel();
+
+  // ?placa=XXX vindo do QR code
+  const p = new URLSearchParams(location.search).get('placa');
+  if (p) {
+    document.getElementById('busca-placa').value = p.toUpperCase();
+    buscarMoto();
+  }
+}
+
+// ---------- escolher moto ----------
+let timerBusca = null;
+function buscarMoto() {
+  clearTimeout(timerBusca);
+  timerBusca = setTimeout(async () => {
+    const termo = document.getElementById('busca-placa').value.trim();
+    const cont = document.getElementById('resultados-moto');
+    if (termo.length < 2) { cont.innerHTML = ''; return; }
+
+    const motos = await window.buscarMotosPorPlaca(termo);
+    if (!motos.length) {
+      cont.innerHTML = '<p class="text-sm text-slate-500 py-2">Nenhuma moto encontrada</p>';
+      return;
+    }
+    cont.innerHTML = motos.map(m => `
+      <button onclick="escolherMoto(${m.id}, '${esc(m.placa)}', '${esc(m.modelo)}', '${esc(m.proprietario||'')}', ${m.km_atual||0})"
+              class="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded dark:text-white">
+        <span class="font-medium">${esc(m.placa)}</span>
+        <span class="text-sm text-slate-500"> · ${esc(m.modelo)} · ${esc(m.proprietario||'')}</span>
+      </button>`).join('');
+  }, 250);
+}
+
+function escolherMoto(id, placa, modelo, prop, km) {
+  motoAtual = { id, placa, modelo, proprietario: prop, km_atual: km };
+  document.getElementById('resultados-moto').innerHTML = '';
+  document.getElementById('busca-placa').value = placa;
+  document.getElementById('moto-info').textContent = `${placa} · ${modelo} · ${prop}`;
+  document.getElementById('km-entrada').value = km || '';
+  document.getElementById('moto-escolhida').classList.remove('hidden');
+}
+
+async function iniciarRecebimento() {
+  if (!motoAtual) return;
+  const btn = document.getElementById('btn-iniciar');
+  btn.disabled = true; btn.textContent = 'Criando...';
+
+  try {
+    // Retoma vistoria interrompida, se houver
+    let rec = await window.recebimento.recebimentoAbertoDaMoto(motoAtual.id);
+    if (rec) {
+      if (!confirm('Já existe uma vistoria aberta para esta moto. Continuar de onde parou?')) {
+        rec = null;
+      }
+    }
+    if (!rec) {
+      const km = parseInt(document.getElementById('km-entrada').value) || null;
+      rec = await window.recebimento.criarRecebimento(motoAtual.id, km);
+    }
+    recAtual = rec;
+    marcacoes = rec.avarias_marcacoes || [];
+    preencherFormulario(rec);
+    mostrarView('view-vistoria');
+    setTimeout(() => { assinEntrada = window.criarAssinatura('canvas-entrada'); }, 150);
+  } catch (e) {
+    alert('Erro: ' + (e.message || e));
+    btn.disabled = false; btn.textContent = 'Iniciar vistoria';
+  }
+}
+
+// ---------- vistoria ----------
+function preencherFormulario(rec) {
+  document.getElementById('avarias-texto').value = rec.avarias_texto || '';
+  document.getElementById('tem-bau').checked = !!rec.tem_bau;
+  document.getElementById('tem-capacete').checked = !!rec.tem_capacete;
+  document.getElementById('tem-documentos').checked = !!rec.tem_documentos;
+  document.getElementById('outros-acessorios').value = rec.outros_acessorios || '';
+  document.getElementById('nome-cliente').value = rec.nome_cliente || motoAtual.proprietario || '';
+  if (rec.nivel_combustivel != null) marcarNivel(rec.nivel_combustivel, false);
+  renderFotos();
+  renderMarcacoes();
+  atualizarValidacao();
+}
+
+function renderFotos() {
+  const g = document.getElementById('grade-fotos');
+  g.innerHTML = window.recebimento.ANGULOS.map(a => {
+    const temFoto = recAtual && recAtual[a.campo];
+    return `
+      <button onclick="tirarFotoAngulo('${a.campo}')"
+              class="aspect-square rounded-lg border-2 ${temFoto ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-dashed border-slate-300 dark:border-slate-600'}
+                     flex flex-col items-center justify-center gap-1 p-2">
+        <span class="text-2xl">${temFoto ? '✓' : a.icone}</span>
+        <span class="text-xs font-medium ${temFoto ? 'text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-300'}">${a.rotulo}</span>
+        <span class="text-[10px] text-slate-400">${temFoto ? 'refazer' : 'toque para fotografar'}</span>
+      </button>`;
+  }).join('');
+
+  const n = window.recebimento.ANGULOS.filter(a => recAtual && recAtual[a.campo]).length;
+  const c = document.getElementById('contador-fotos');
+  c.textContent = `${n} de 4`;
+  c.className = 'text-sm font-medium ' + (n === 4 ? 'text-green-600' : 'text-amber-600');
+}
+
+async function tirarFotoAngulo(campo) {
+  try {
+    const r = await window.recebimento.capturarFotoAngulo(recAtual.id, campo);
+    if (r) {
+      recAtual[campo] = r.path;
+      renderFotos();
+      atualizarValidacao();
+    }
+  } catch (e) {
+    alert('Erro ao enviar foto: ' + (e.message || e));
+  }
+}
+
+function montarNiveisCombustivel() {
+  document.getElementById('niveis-combustivel').innerHTML =
+    window.recebimento.NIVEIS_COMBUSTIVEL.map(n => `
+      <button id="nivel-${n.valor}" onclick="marcarNivel(${n.valor})"
+              class="py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm dark:text-white">
+        ${n.rotulo}
+      </button>`).join('');
+}
+
+function marcarNivel(valor, salvar = true) {
+  window.recebimento.NIVEIS_COMBUSTIVEL.forEach(n => {
+    const b = document.getElementById(`nivel-${n.valor}`);
+    if (!b) return;
+    const ativo = n.valor === Number(valor);
+    b.className = 'py-2 rounded-lg border text-sm ' + (ativo
+      ? 'bg-red-600 text-white border-red-600'
+      : 'border-slate-300 dark:border-slate-600 dark:text-white');
+  });
+  if (salvar) salvarCampo('nivel_combustivel', Number(valor));
+}
+
+let timerSalvar = null;
+function salvarCampo(campo, valor) {
+  if (!recAtual) return;
+  recAtual[campo] = valor;
+  clearTimeout(timerSalvar);
+  timerSalvar = setTimeout(async () => {
+    try { await window.recebimento.atualizarRecebimento(recAtual.id, { [campo]: valor }); }
+    catch (e) { console.warn('salvarCampo:', e); }
+  }, 600);
+}
+
+// ---------- marcações ----------
+function abrirModalMarcacao() {
+  document.getElementById('marcacao-nota').value = '';
+  const m = document.getElementById('modal-marcacao');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function fecharModalMarcacao() {
+  const m = document.getElementById('modal-marcacao');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+function salvarMarcacao() {
+  const nota = document.getElementById('marcacao-nota').value.trim();
+  if (!nota) { alert('Descreva a avaria'); return; }
+  marcacoes = window.recebimento.adicionarMarcacao(marcacoes, {
+    x: 0.5, y: 0.5,
+    lado: document.getElementById('marcacao-lado').value,
+    nota
+  });
+  salvarCampo('avarias_marcacoes', marcacoes);
+  fecharModalMarcacao();
+  renderMarcacoes();
+}
+function excluirMarcacao(i) {
+  marcacoes = window.recebimento.removerMarcacao(marcacoes, i);
+  salvarCampo('avarias_marcacoes', marcacoes);
+  renderMarcacoes();
+}
+function renderMarcacoes() {
+  const c = document.getElementById('lista-marcacoes');
+  if (!marcacoes.length) { c.innerHTML = '<p class="text-xs text-slate-400">Nenhuma marcação</p>'; return; }
+  c.innerHTML = marcacoes.map((m, i) => `
+    <div class="flex justify-between items-center text-sm py-1 border-b border-slate-100 dark:border-slate-700">
+      <span class="dark:text-slate-200"><strong>${esc(m.lado)}:</strong> ${esc(m.nota)}</span>
+      <button onclick="excluirMarcacao(${i})" class="text-slate-400 hover:text-red-600">&times;</button>
+    </div>`).join('');
+}
+
+// ---------- validação e conclusão ----------
+function limparAssinatura() { if (assinEntrada) assinEntrada.limpar(); }
+
+function atualizarValidacao() {
+  if (!recAtual) return;
+  const v = window.recebimento.validarLocal(recAtual);
+  const el = document.getElementById('status-validacao');
+  const temAssinAgora = assinEntrada && assinEntrada.foiTocado();
+
+  if (v.fotos_faltando > 0) {
+    el.textContent = `Faltam ${v.fotos_faltando} foto(s)`;
+    el.className = 'text-xs text-center mb-2 text-amber-600';
+  } else if (!temAssinAgora) {
+    el.textContent = 'Falta a assinatura do cliente';
+    el.className = 'text-xs text-center mb-2 text-amber-600';
+  } else {
+    el.textContent = 'Pronto para concluir';
+    el.className = 'text-xs text-center mb-2 text-green-600';
+  }
+}
+
+async function concluirRecebimento() {
+  const v = window.recebimento.validarLocal(recAtual);
+  if (v.fotos_faltando > 0) {
+    alert(`Tire as 4 fotos antes de concluir. Faltam ${v.fotos_faltando}.`);
+    return;
+  }
+  if (!assinEntrada || !assinEntrada.foiTocado()) {
+    alert('Colete a assinatura do cliente');
+    return;
+  }
+  const nome = document.getElementById('nome-cliente').value.trim();
+  if (nome.length < 3) { alert('Informe o nome de quem entrega a moto'); return; }
+
+  const btn = document.getElementById('btn-concluir');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const usuario = await getUsuarioAtual();
+    const mec = usuario.user_metadata?.nome_completo || usuario.email;
+    await window.recebimento.assinarEntrada(recAtual.id, assinEntrada.exportarPng(), nome, mec);
+
+    document.getElementById('link-inspecao').href =
+      `./inspecao.html?placa=${encodeURIComponent(motoAtual.placa)}&recebimento=${recAtual.id}`;
+    mostrarView('view-pronto');
+  } catch (e) {
+    alert('Erro: ' + (e.message || e));
+    btn.disabled = false; btn.textContent = 'Concluir vistoria';
+  }
+}
+
+function mostrarView(id) {
+  ['view-moto','view-vistoria','view-pronto'].forEach(v => {
+    document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+  window.scrollTo(0, 0);
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+setInterval(atualizarValidacao, 1500);
+boot();
+</script>
+</body>
+</html>

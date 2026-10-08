@@ -263,6 +263,7 @@
 <script src="./src/status_offline.js"></script>
 <script src="./src/camera.js"></script>
 <script src="./src/assinatura.js"></script>
+<script src="./src/recebimento.js"></script>
 <script src="./src/medicoes.js"></script>
 <script src="./src/avulsos.js"></script>
 <script src="./src/orcamento.js"></script>
@@ -409,6 +410,9 @@ async function iniciarInspecao() {
         await carregarChecklist();
         mostrarView('view-execucao');
 
+        // Fase 9: vincula a vistoria de entrada, se veio de recebimento.html
+        vincularRecebimento().catch(e => console.warn(e));
+
         // Fase 8: carrega itens avulsos e orcamento desta inspecao
         if (window.avulsos)   recarregarAvulsos().catch(e => console.warn(e));
         if (window.orcamento) recarregarOrcamento().catch(e => console.warn(e));
@@ -496,13 +500,19 @@ function renderItem(item) {
         </div>
 
         ${item.exige_foto ? `
-        <div class="mt-2">
-            <button onclick="capturarFotoItem(${item.id})" id="${idBase}-foto-btn"
-                    class="text-xs px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium">
-                ${r.foto_path ? '📷 Refazer foto' : '📷 Tirar foto'}
+        <div class="mt-2 flex gap-2">
+            <button onclick="capturarFotoItem(${item.id}, 'antes')" id="${idBase}-foto-antes-btn"
+                    class="flex-1 text-xs px-2 py-1.5 rounded font-medium ${r.foto_antes_url
+                        ? 'bg-green-100 text-green-700' : 'bg-blue-100 hover:bg-blue-200 text-blue-700'}">
+                ${r.foto_antes_url ? '✓ Antes' : '📷 Antes'}
             </button>
-            <span id="${idBase}-foto-status" class="text-xs ml-2">${r.foto_path ? '✓ enviada' : ''}</span>
-        </div>` : ''}
+            <button onclick="capturarFotoItem(${item.id}, 'depois')" id="${idBase}-foto-depois-btn"
+                    class="flex-1 text-xs px-2 py-1.5 rounded font-medium ${r.foto_depois_url
+                        ? 'bg-green-100 text-green-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+                ${r.foto_depois_url ? '✓ Depois' : '📷 Depois'}
+            </button>
+        </div>
+        <div id="${idBase}-foto-status" class="text-xs mt-1 text-slate-500"></div>` : ''}
     </div>`;
 }
 
@@ -568,22 +578,40 @@ function marcarObs(itemId, valor) {
     });
 }
 
-async function capturarFotoItem(itemId) {
+/**
+ * Fase 9: duas fotos por item - 'antes' (estado encontrado) e
+ * 'depois' (prova do servico feito).
+ */
+async function capturarFotoItem(itemId, momento = 'antes') {
     const statusEl = document.getElementById(`item-${itemId}-foto-status`);
+    const rotulo = momento === 'depois' ? 'depois' : 'antes';
+
     const path = await window.tirarFoto(
         window.estadoInspecao.inspecao.id,
-        itemId,
+        `${itemId}-${rotulo}`,
         {
-            onCapturando: () => { statusEl.textContent = 'abrindo câmera…'; },
+            onCapturando: () => { statusEl.textContent = `abrindo câmera (${rotulo})…`; },
             onComprimindo: () => { statusEl.textContent = 'processando…'; },
             onEnviando: (kb) => { statusEl.textContent = `enviando ${kb}KB…`; },
-            onSucesso: (p, kb) => { statusEl.textContent = `✓ ${kb}KB`; },
+            onSucesso: (p, kb) => { statusEl.textContent = `✓ foto ${rotulo} (${kb}KB)`; },
             onErro: (e) => { statusEl.textContent = '✗ erro'; toast('Erro na foto', 'erro'); }
         }
     );
+
     if (path) {
-        window.agendarSalvamento(itemId, { foto_path: path }, {
-            onSalvo: () => atualizarProgresso()
+        const campo = momento === 'depois' ? 'foto_depois_url' : 'foto_antes_url';
+        const update = { [campo]: path };
+        // foto_url continua apontando para a 'antes', por retrocompatibilidade
+        if (momento === 'antes') update.foto_path = path;
+
+        window.agendarSalvamento(itemId, update, {
+            onSalvo: () => {
+                const r = window.estadoInspecao.respostas[itemId] || {};
+                r[campo] = path;
+                window.estadoInspecao.respostas[itemId] = r;
+                atualizarProgresso();
+                atualizarCard(itemId);
+            }
         });
     }
 }
@@ -722,6 +750,13 @@ async function confirmarFinalizacao() {
             nome_cliente_assinou: nomeCliente
         }).eq('id', window.estadoInspecao.inspecao.id);
         if (error) throw error;
+
+        // Fase 9: congela as recomendacoes desta inspecao (saem no PDF)
+        try {
+            await window.sb.rpc('gerar_recomendacoes', {
+                p_inspecao_id: window.estadoInspecao.inspecao.id
+            });
+        } catch (e) { console.warn('gerar_recomendacoes:', e); }
 
         // 2. Vai para tela de progresso
         mostrarView('view-gerando');
@@ -1202,6 +1237,19 @@ function escapeHtml(s) {
     return String(s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+<script>
+/**
+ * Fase 9: se a inspecao veio de recebimento.html (?recebimento=UUID),
+ * vincula a vistoria de entrada a esta inspecao.
+ */
+async function vincularRecebimento() {
+    const recId = new URLSearchParams(location.search).get('recebimento');
+    if (!recId || !window.recebimento || !window.estadoInspecao?.inspecao) return;
+    try {
+        await window.recebimento.vincularInspecao(recId, window.estadoInspecao.inspecao.id);
+    } catch (e) { console.warn('vincularRecebimento:', e); }
 }
 </script>
 </body>

@@ -110,6 +110,16 @@ if (!localStorage.getItem('rm_onboarding_visto') && !location.search.includes('s
                class="block bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white text-slate-900 rounded-xl p-4 text-center font-medium mb-6 transition">
                 📱 QR Code (gerar/escanear)
             </a>
+
+            <a href="./recebimento.html"
+               class="block bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white text-slate-900 rounded-xl p-4 text-center font-medium mb-3 transition">
+                📋 Recebimento de moto
+            </a>
+
+            <a href="./lembretes.html"
+               class="block bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white text-slate-900 rounded-xl p-4 text-center font-medium mb-3 transition">
+                💬 Lembretes ao cliente <span id="badge-lembretes" class="ml-1 text-xs px-2 py-0.5 bg-red-600 text-white rounded-full hidden"></span>
+            </a>
             </div>
 
             <a href="./admin.html"
@@ -161,6 +171,7 @@ if (!localStorage.getItem('rm_onboarding_visto') && !location.search.includes('s
     <script src="./src/darkmode.js"></script>
     <script src="./src/i18n.js"></script>
     <script src="./src/notifications.js"></script>
+    <script src="./src/lembretes.js"></script>
     <script>
         // ================================================================
         // BOOT
@@ -314,6 +325,19 @@ window.addEventListener('load', () => {
             }
         }
     }, 2000);
+});
+</script>
+<script>
+// Fase 9: badge com quantos clientes aguardam lembrete
+window.addEventListener('load', () => {
+    setTimeout(async () => {
+        if (!window.lembretes) return;
+        try {
+            const n = await window.lembretes.contarPendentes();
+            const b = document.getElementById('badge-lembretes');
+            if (b && n > 0) { b.textContent = n; b.classList.remove('hidden'); }
+        } catch (e) { /* silencioso */ }
+    }, 2500);
 });
 </script>
 </body>

@@ -145,12 +145,21 @@ PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test
     python3 "$RAIZ/tests/test_fase8.py"
 EXIT_F8=$?
 
-EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 + EXIT_F7 + EXIT_F8 ))
+echo ""
+echo "----------------------------------------"
+echo ""
+
+# Fase 9 (P2 - recebimento, recomendacoes, fotos, lembretes, OS)
+PGHOST="$PG_SOCK" PGPORT="$PG_PORT" PGUSER=postgres PGDATABASE=revisao_moto_test \
+    python3 "$RAIZ/tests/test_fase9.py"
+EXIT_F9=$?
+
+EXIT_CODE=$(( EXIT_F0 + EXIT_F1 + EXIT_F2 + EXIT_F3 + EXIT_F4 + EXIT_F5 + EXIT_F6 + EXIT_F7 + EXIT_F8 + EXIT_F9 ))
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then
     echo "=========================================="
-    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 8)"
+    echo "  TODOS OS TESTES PASSARAM (Fase 0 -> 9)"
     echo "=========================================="
 else
     echo "=========================================="
@@ -164,6 +173,7 @@ else
     echo "  Fase 6 exit: $EXIT_F6"
     echo "  Fase 7 exit: $EXIT_F7"
     echo "  Fase 8 exit: $EXIT_F8"
+    echo "  Fase 9 exit: $EXIT_F9"
     echo "=========================================="
 fi
 

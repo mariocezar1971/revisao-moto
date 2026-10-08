@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#dc2626">
+  <title>Lembretes · Revisão Moto</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: "class" };</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen">
+
+<header class="header-app p-4 dark:bg-slate-800">
+  <div class="flex items-center gap-3 max-w-2xl mx-auto">
+    <a href="./index.html" class="text-slate-300 hover:text-white text-xl">←</a>
+    <div>
+      <h1 class="text-lg font-bold text-white">Lembretes ao cliente</h1>
+      <p class="text-xs text-slate-300">Motos que precisam voltar para revisão</p>
+    </div>
+  </div>
+</header>
+
+<main class="p-4 max-w-2xl mx-auto">
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Aguardando contato</p>
+        <p id="contador" class="text-3xl font-bold text-red-600">—</p>
+      </div>
+      <button onclick="carregar()"
+              class="px-3 py-2 bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg text-sm font-medium">
+        Atualizar
+      </button>
+    </div>
+    <p class="text-xs text-slate-400 mt-2">
+      Uma moto só reaparece aqui 30 dias depois do último lembrete.
+    </p>
+  </div>
+
+  <div id="lista" class="space-y-3">
+    <p class="text-slate-500 text-center py-8">Carregando...</p>
+  </div>
+</main>
+
+<!-- Modal de prévia -->
+<div id="modal-previa" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-1 dark:text-white">Mensagem</h3>
+    <p class="text-xs text-slate-500 mb-3">
+      Revise antes de enviar. Dá para editar no próprio WhatsApp depois.
+    </p>
+    <textarea id="previa-texto" rows="8"
+           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm"></textarea>
+    <p id="previa-destino" class="text-xs text-slate-500 mt-2"></p>
+    <div class="flex gap-2 mt-4">
+      <button onclick="fecharPrevia()" class="flex-1 py-2 border border-slate-300 dark:border-slate-600 dark:text-white rounded-lg">
+        Cancelar
+      </button>
+      <button onclick="confirmarEnvio()" class="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
+        Abrir WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
+<script src="./src/lembretes.js"></script>
+<script>
+let pendentes = [];
+let itemAtual = null;
+
+async function boot() {
+  await exigirLogin();
+  await carregar();
+}
+
+async function carregar() {
+  const cont = document.getElementById('lista');
+  cont.innerHTML = '<p class="text-slate-500 text-center py-8">Carregando...</p>';
+
+  pendentes = await window.lembretes.listarPendentes();
+  document.getElementById('contador').textContent = pendentes.length;
+
+  if (!pendentes.length) {
+    cont.innerHTML = `
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-8 text-center shadow-sm">
+        <div class="text-4xl mb-2">✓</div>
+        <p class="font-medium text-slate-900 dark:text-white">Nenhum lembrete pendente</p>
+        <p class="text-sm text-slate-500 mt-1">
+          Todas as motos estão em dia ou já foram avisadas.
+        </p>
+      </div>`;
+    return;
+  }
+
+  cont.innerHTML = pendentes.map((p, i) => {
+    const atrasada = p.status_revisao === 'atrasada';
+    return `
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 dark:text-white">${esc(p.placa)}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${atrasada
+                ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
+                ${atrasada ? 'Atrasada' : 'Próxima'}
+              </span>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-300">${esc(p.modelo)}</p>
+            <p class="text-sm text-slate-500">${esc(p.proprietario || '-')}</p>
+            <p class="text-xs text-slate-400 mt-1">
+              ${fmt(p.km_atual)} km · revisão de ${fmt(p.proxima_km_prevista)} km
+              ${p.ultimo_envio ? ' · avisado em ' + new Date(p.ultimo_envio).toLocaleDateString('pt-BR') : ''}
+            </p>
+          </div>
+          <button onclick="abrirPrevia(${i})"
+                  class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium whitespace-nowrap">
+            WhatsApp
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function abrirPrevia(i) {
+  itemAtual = pendentes[i];
+  const msg = window.lembretes.montarMensagem(itemAtual.tipo_lembrete, itemAtual);
+  document.getElementById('previa-texto').value = msg;
+
+  const tel = window.lembretes.normalizarTelefone(itemAtual.telefone);
+  const d = document.getElementById('previa-destino');
+  if (tel) {
+    d.textContent = `Para: ${itemAtual.proprietario || ''} (${itemAtual.telefone})`;
+    d.className = 'text-xs text-slate-500 mt-2';
+  } else {
+    d.textContent = `Telefone inválido: ${itemAtual.telefone || '(vazio)'}`;
+    d.className = 'text-xs text-red-600 mt-2';
+  }
+
+  const m = document.getElementById('modal-previa');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+
+function fecharPrevia() {
+  const m = document.getElementById('modal-previa');
+  m.classList.add('hidden'); m.classList.remove('flex');
+  itemAtual = null;
+}
+
+async function confirmarEnvio() {
+  if (!itemAtual) return;
+  const msg = document.getElementById('previa-texto').value;
+  const link = window.lembretes.montarLinkWhatsapp(itemAtual.telefone, msg);
+  if (!link) { alert('Telefone inválido. Corrija no cadastro da moto.'); return; }
+
+  try {
+    const usuario = await getUsuarioAtual();
+    const mec = usuario.user_metadata?.nome_completo || usuario.email;
+    window.open(link, '_blank');
+    await window.lembretes.registrarEnvio(
+      itemAtual.moto_id, itemAtual.tipo_lembrete, msg, itemAtual.km_atual, mec);
+    fecharPrevia();
+    await carregar();
+  } catch (e) {
+    alert('Erro: ' + (e.message || e));
+  }
+}
+
+function fmt(n) { return (Number(n) || 0).toLocaleString('pt-BR'); }
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+boot();
+</script>
+</body>
+</html>

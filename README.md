@@ -76,8 +76,9 @@ Depois: configurar `.env` e `usuarios.json`, rodar `scripts/setup_fase1.py`, apl
 | **Fase 6** | Offline completo (IndexedDB, sync queue) | OK | 83 |
 | **Fase 7** | Polimento: icones, onboarding, QR, specs, notifs, dark mode, i18n | OK | 122 |
 | **Fase 8 (P1)** | Operacao real: medicao numerica, queixa do cliente, itens avulsos, orcamento | OK | 145 |
+| **Fase 9 (P2)** | Recebimento/avarias, recomendacoes, fotos antes/depois, lembretes ao cliente, numero de OS | OK | 136 |
 
-**Total: 778 testes automatizados** via `./tests/run_tests.sh`.
+**Total: 914 testes automatizados** via `./tests/run_tests.sh`.
 
 ### Fase 8 (P1) em detalhe
 
