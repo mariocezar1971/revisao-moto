@@ -71,13 +71,20 @@ async function listarRevisoesDoModelo(modeloId) {
 // ================================================================
 // CRIACAO DA INSPECAO
 // ================================================================
-async function criarInspecao({ moto_id, revisao_id, km_registrado, mecanico_id, mecanico_nome, queixa_cliente }) {
+async function criarInspecao({ moto_id, revisao_id, km_registrado, mecanico_id, mecanico_nome,
+                               queixa_cliente, tipo_execucao, servico_rapido_id,
+                               tipo_cobranca, inspecao_origem }) {
     const { data, error } = await window.sb
         .from('inspecoes')
         .insert({
             moto_id, revisao_id, km_registrado,
             mecanico_id, mecanico_nome,
             queixa_cliente: queixa_cliente || null,
+            // Fase 10
+            tipo_execucao: tipo_execucao || 'completa',
+            servico_rapido_id: servico_rapido_id || null,
+            tipo_cobranca: tipo_cobranca || 'pago',
+            inspecao_origem: inspecao_origem || null,
             status: 'em_andamento'
         })
         .select()
@@ -101,14 +108,36 @@ async function retomarInspecaoEmAndamento(motoId) {
 // ================================================================
 // CARREGAMENTO DE ITENS
 // ================================================================
-async function carregarItensDaRevisao(revisaoId) {
+/**
+ * Itens da revisao. A Fase 10 adicionou o recorte por servico rapido:
+ * quando a inspecao eh 'rapida', so entram os itens daquele servico,
+ * nao os 16 a 24 da revisao inteira.
+ */
+async function carregarItensDaRevisao(revisaoId, opcoes = {}) {
+    // Revisao rapida: a funcao SQL ja devolve os campos de medicao
+    // (unidade, limites, chave_medicao) no mesmo formato da view.
+    if (opcoes.tipoExecucao === 'rapida' && opcoes.servicoRapidoId) {
+        const { data, error } = await window.sb.rpc('itens_do_servico_rapido', {
+            p_servico_id: opcoes.servicoRapidoId,
+            p_revisao_id: revisaoId
+        });
+        if (error) throw error;
+        // A view usa 'item_id'; o resto do codigo espera 'id'.
+        return (data || []).map(i => ({ ...i, id: i.item_id }));
+    }
+
     const { data, error } = await window.sb
         .from('vw_checklist_completo')
         .select('*')
         .eq('revisao_id', revisaoId)
         .order('ordem');
     if (error) throw error;
-    return data || [];
+
+    // A view expoe a chave como 'item_id' (vem de "i.id AS item_id"),
+    // mas renderItem(), marcarStatus() e o mapa de respostas usam
+    // 'item.id'. Sem este map, item.id eh undefined e os botoes de
+    // status chamam marcarStatus(undefined).
+    return (data || []).map(i => ({ ...i, id: i.item_id }));
 }
 
 async function carregarRespostasSalvas(inspecaoId) {

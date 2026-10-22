@@ -569,10 +569,10 @@ def t_integracao():
     sw = (RAIZ / 'service-worker.js').read_text()
     for m in ['medicoes.js', 'avulsos.js', 'orcamento.js']:
         teste(f"APP_SHELL contem {m}", m in sw)
-    teste("SW versao v0.8+", re.search(r"v0\.(\d+)", sw) and
-          int(re.search(r"v0\.(\d+)", sw).group(1)) >= 8,
-          re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw).group(1)
-          if re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw) else '?')
+    _mv = re.search(r"CACHE_VERSION\s*=\s*'v(\d+)\.(\d+)", sw)
+    _ver = (int(_mv.group(1)), int(_mv.group(2))) if _mv else (0, 0)
+    _vtxt = _mv.group(0).split("'")[-1] if _mv else '?'
+    teste("SW versao v0.8+", _ver >= (0, 8), _vtxt)
 
 
 # ============================================================

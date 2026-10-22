@@ -11,7 +11,7 @@ REVISAO-MOTO :: Suite de testes da Fase 9 (P2) - Alta prioridade
 ========================================================================
 """
 
-import os, re, json, subprocess, sys
+import os, re, json, subprocess, sys, tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).parent.parent.resolve()
@@ -65,6 +65,36 @@ def psql_arq(arq):
 def node_check(c):
     r = subprocess.run(['node','--check',str(c)], capture_output=True, text=True)
     return r.returncode == 0, r.stderr
+
+
+def node_eval(js_path, trecho):
+    """Carrega um modulo window.* e roda um trecho de teste em cima dele.
+
+    NAO usa require() nem 'node -e'. Dois motivos, os dois ja mordidos:
+
+    1. require() resolve package.json subindo a arvore de diretorios. Se
+       QUALQUER pasta acima do projeto declarar "type": "module" - e no
+       Dropbox do usuario ha outros projetos JS acima - o Node trata este
+       .js como ESM e estoura ERR_REQUIRE_ESM, mesmo o arquivo sendo
+       CommonJS perfeitamente valido. 'node --check' passa, o require nao.
+    2. 'node -e' depende de process.argv[1] carregar o argumento extra.
+
+    Lendo o arquivo e avaliando o texto, nenhuma das duas coisas importa.
+    Devolve (stdout, stderr) para que a falha apareca no detalhe do teste
+    em vez de virar um resultado vazio sem explicacao.
+    """
+    runner = ("const fs = require('fs');\n"
+              "global.window = {};\n"
+              "eval(fs.readFileSync(process.argv[2], 'utf8'));\n" + trecho)
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False) as f:
+        f.write(runner)
+        tmp = f.name
+    try:
+        r = subprocess.run(['node', tmp, str(js_path)],
+                           capture_output=True, text=True)
+        return r.stdout.strip(), r.stderr.strip()
+    finally:
+        os.unlink(tmp)
 
 
 # ============================================================
@@ -469,9 +499,7 @@ def t_lembretes():
         teste("Codifica a mensagem na URL", 'encodeURIComponent' in c)
 
         # Normalizacao de telefone
-        script = '''
-        global.window = {};
-        require(process.argv[1]);
+        trecho = '''
         const n = window.lembretes.normalizarTelefone;
         const casos = [
           ["(27) 99988-7766", "5527999887766"],
@@ -482,12 +510,16 @@ def t_lembretes():
           ["",                null]
         ];
         let ok = 0;
-        for (const [i, e] of casos) { if (n(i) === e) ok++; }
-        console.log(ok + "/" + casos.length);
+        const erros = [];
+        for (const [i, e] of casos) {
+          const got = n(i);
+          if (got === e) ok++; else erros.push(JSON.stringify(i) + " -> " + got);
+        }
+        console.log(ok + "/" + casos.length + (erros.length ? " | " + erros.join("; ") : ""));
         '''
-        r = subprocess.run(['node','-e',script, str(js)], capture_output=True, text=True)
-        teste("Normaliza telefone em todos os formatos", r.stdout.strip() == '6/6',
-              f"resultado: {r.stdout.strip()}")
+        out, err = node_eval(js, trecho)
+        teste("Normaliza telefone em todos os formatos", out.startswith('6/6'),
+              out if out else f"node falhou: {err[:160]}")
 
     # Pagina
     pg = RAIZ / 'lembretes.html'
@@ -525,10 +557,10 @@ def t_integracao():
     for a in ['recebimento.html','lembretes.html','recebimento.js','lembretes.js']:
         teste(f"APP_SHELL contem {a}", a in sw)
 
-    m = re.search(r"v0\.(\d+)", sw)
-    teste("SW versao v0.9+", m and int(m.group(1)) >= 9,
-          re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw).group(1)
-          if re.search(r"CACHE_VERSION\s*=\s*'([^']+)'", sw) else '?')
+    _mv = re.search(r"CACHE_VERSION\s*=\s*'v(\d+)\.(\d+)", sw)
+    _ver = (int(_mv.group(1)), int(_mv.group(2))) if _mv else (0, 0)
+    _vtxt = _mv.group(0).split("'")[-1] if _mv else '?'
+    teste("SW versao v0.9+", _ver >= (0, 9), _vtxt)
 
 
 # ============================================================

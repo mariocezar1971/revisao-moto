@@ -67,7 +67,7 @@ Depois: configurar `.env` e `usuarios.json`, rodar `scripts/setup_fase1.py`, apl
 
 | Fase | Descricao | Status | Testes |
 |---|---|---|---|
-| **Fase 0** | Setup: schema, seed, PWA, login | OK | 110 |
+| **Fase 0** | Setup: schema, seed, PWA, login | OK | 111 |
 | **Fase 1** | Catalogo, bucket, usuarios | OK | 24 |
 | **Fase 2** | CRUD de motos, soft delete | OK | 61 |
 | **Fase 3** | Execucao do checklist, fotos, autosave | OK | 69 |
@@ -77,8 +77,25 @@ Depois: configurar `.env` e `usuarios.json`, rodar `scripts/setup_fase1.py`, apl
 | **Fase 7** | Polimento: icones, onboarding, QR, specs, notifs, dark mode, i18n | OK | 122 |
 | **Fase 8 (P1)** | Operacao real: medicao numerica, queixa do cliente, itens avulsos, orcamento | OK | 145 |
 | **Fase 9 (P2)** | Recebimento/avarias, recomendacoes, fotos antes/depois, lembretes ao cliente, numero de OS | OK | 136 |
+| **Fase 10 (P3)** | Comparacao entre revisoes, teste de rodagem, garantia, torque aplicado, revisao rapida | OK | 206 |
 
-**Total: 914 testes automatizados** via `./tests/run_tests.sh`.
+**Total: 1120 testes automatizados** via `./tests/run_tests.sh`.
+
+### Fase 10 (P3) em detalhe
+
+| Item | O que resolve |
+|---|---|
+| Comparacao entre revisoes | O historico mostrava cada revisao isolada. Agora mostra a diferenca item a item (pastilha 4,0 -> 2,8 mm) casando por `chave_medicao`, com grafico de evolucao. A tendencia respeita o tipo do item: faixa (bom eh o meio), desgaste (cair eh piorar) e teto (subir eh piorar) |
+| Teste de rodagem estruturado | Era campo de texto livre. Virou checklist de 14 itens com km inicial/final, condicao de pista e responsavel, e o encerramento eh bloqueado com item obrigatorio em branco |
+| Garantia | O app cobrava sempre. Agora ha 4 tipos de cobranca, janela de 90 dias aberta ao finalizar (CDC art. 26) somente para trabalho pago ou de garantia de fabrica, e aviso de cobertura na abertura da inspecao |
+| Torque efetivamente aplicado | A tela de especificacoes dizia qual torque usar, mas nada registrava o aplicado. Agora cada ponto eh registrado e avaliado contra a spec com tolerancia de 10%, e sai no PDF |
+| Revisao rapida vs completa | Abrir 22 itens para uma troca de oleo eh atrito. Tres modos: completa, rapida (so os itens do servico, de um catalogo de 6) e avulsa |
+
+**Bug corrigido nesta fase:** `vw_checklist_completo` expoe a chave como `item_id`, mas
+`renderItem()`, `marcarStatus()` e o mapa de respostas usavam `item.id`, que era `undefined`.
+Os botoes OK/N-OK/N/A chamavam `marcarStatus(undefined)` e o checklist nao salvava.
+Valia para todas as versoes anteriores. Corrigido em `carregarItensDaRevisao()`, com grupo
+de regressao dedicado em `tests/test_fase10.py`.
 
 ### Fase 8 (P1) em detalhe
 

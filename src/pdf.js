@@ -130,6 +130,41 @@ async function coletarDadosInspecao(inspecaoId) {
         .eq('inspecao_id', inspecaoId)
         .order('prioridade');
 
+    // --- Fase 10: teste de rodagem ---
+    const { data: rodagens } = await window.sb
+        .from('vw_rodagem')
+        .select('*')
+        .eq('inspecao_id', inspecaoId)
+        .limit(1);
+    const rodagem = (rodagens && rodagens.length) ? rodagens[0] : null;
+
+    let rodagemItens = [];
+    if (rodagem) {
+        const { data: ri } = await window.sb
+            .from('inspecao_rodagem_itens')
+            .select('*, rodagem_itens(categoria, descricao, ordem)')
+            .eq('rodagem_id', rodagem.id);
+        rodagemItens = (ri || []).sort(
+            (a, b) => (a.rodagem_itens?.ordem || 0) - (b.rodagem_itens?.ordem || 0));
+    }
+
+    // --- Fase 10: torques aplicados ---
+    const { data: torques } = await window.sb
+        .from('vw_torques_inspecao')
+        .select('*')
+        .eq('inspecao_id', inspecaoId);
+
+    // --- Fase 10: nome do servico rapido, quando houver ---
+    let servicoRapido = null;
+    if (inspecao.servico_rapido_id) {
+        const { data: sr } = await window.sb
+            .from('servicos_rapidos')
+            .select('nome')
+            .eq('id', inspecao.servico_rapido_id)
+            .single();
+        servicoRapido = sr ? sr.nome : null;
+    }
+
     return {
         inspecao,
         itensExecutados: ordenados,
@@ -139,7 +174,11 @@ async function coletarDadosInspecao(inspecaoId) {
         servicos: servicos || [],
         totais: totais || null,
         recebimento: (recebimentos && recebimentos.length) ? recebimentos[0] : null,
-        recomendacoes: recomendacoes || []
+        recomendacoes: recomendacoes || [],
+        rodagem,
+        rodagemItens,
+        torques: torques || [],
+        servicoRapido
     };
 }
 
@@ -153,7 +192,8 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
 
     onp('Coletando dados...');
     const { inspecao, itensExecutados, progresso, avulsos, pecas, servicos, totais,
-            recebimento, recomendacoes } = await coletarDadosInspecao(inspecaoId);
+            recebimento, recomendacoes, rodagem, rodagemItens, torques,
+            servicoRapido } = await coletarDadosInspecao(inspecaoId);
     const moto = inspecao.motos;
     const modelo = moto.modelos;
     const revisao = inspecao.revisoes;
@@ -206,7 +246,36 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
     doc.text(`Data: ${dataFmt}`, M, y);
     doc.text(`Mecanico: ${inspecao.mecanico_nome || '-'}`, M + 60, y); y += 5;
     const resumo = `${progresso.total_itens || 0} itens · OK: ${progresso.ok_count || 0} · N-OK: ${progresso.nao_ok_count || 0} · N/A: ${progresso.na_count || 0}`;
-    doc.text(resumo, M, y); y += 8;
+    doc.text(resumo, M, y); y += 5;
+
+    // --- Fase 10: tipo de servico e quem paga ---
+    const rotulosTipo = { completa: 'Revisao completa', rapida: 'Servico rapido', avulsa: 'Avulsa' };
+    let txtTipo = rotulosTipo[inspecao.tipo_execucao] || 'Revisao completa';
+    if (inspecao.tipo_execucao === 'rapida' && servicoRapido) txtTipo += `: ${servicoRapido}`;
+    doc.text(`Tipo: ${txtTipo}`, M, y);
+
+    const rotulosCobranca = {
+        pago: 'Pago pelo cliente',
+        garantia_fabrica: 'Garantia de fabrica',
+        garantia_oficina: 'Garantia da oficina',
+        cortesia: 'Cortesia'
+    };
+    const cob = rotulosCobranca[inspecao.tipo_cobranca] || 'Pago pelo cliente';
+    if (inspecao.tipo_cobranca && inspecao.tipo_cobranca !== 'pago') {
+        doc.setTextColor(...PDF_CONFIG.cor_verde);
+        doc.setFont('helvetica', 'bold');
+    }
+    doc.text(`Cobranca: ${cob}`, M + 90, y);
+    doc.setTextColor(...PDF_CONFIG.cor_texto);
+    doc.setFont('helvetica', 'normal');
+    y += 5;
+
+    if (inspecao.garantia_ate) {
+        const gData = new Date(inspecao.garantia_ate + 'T12:00:00').toLocaleDateString('pt-BR');
+        doc.text(`Garantia deste servico ate ${gData} (90 dias, CDC art. 26)`, M, y);
+        y += 5;
+    }
+    y += 3;
 
     // --- Fase 9: Bloco VISTORIA DE ENTRADA ---
     if (recebimento) {
@@ -458,14 +527,33 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
         doc.setFontSize(9);
         doc.text(`Pecas: ${brl(tot.total_pecas)}`, M + 2, y);
         doc.text(`Mao de obra: ${brl(tot.total_servicos)}`, M + 55, y);
+
+        // Fase 10: servico coberto nao cobra do cliente. O valor fica
+        // no documento como referencia do que foi gasto, mas o total
+        // devido eh zero.
+        const cobraCliente = !inspecao.tipo_cobranca || inspecao.tipo_cobranca === 'pago';
         doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-        doc.text(`TOTAL: ${brl(tot.total_geral)}`,
-                 PDF_CONFIG.largura - M - 2, y, { align: 'right' });
+        if (cobraCliente) {
+            doc.text(`TOTAL: ${brl(tot.total_geral)}`,
+                     PDF_CONFIG.largura - M - 2, y, { align: 'right' });
+        } else {
+            doc.setTextColor(...PDF_CONFIG.cor_verde);
+            doc.text(`TOTAL: ${brl(0)}`,
+                     PDF_CONFIG.largura - M - 2, y, { align: 'right' });
+            doc.setTextColor(...PDF_CONFIG.cor_texto);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+            doc.text(`(valor de referencia ${brl(tot.total_geral)} coberto pela garantia)`,
+                     PDF_CONFIG.largura - M - 2, y + 4, { align: 'right' });
+        }
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
         y += 7;
 
-        // Aprovacao previa (CDC art. 40)
-        if (tot.orcamento_aprovado) {
+        // Aprovacao previa (CDC art. 40) - so faz sentido se cobra
+        if (!cobraCliente) {
+            doc.setTextColor(...PDF_CONFIG.cor_verde);
+            doc.text('Servico coberto - sem cobranca ao cliente', M + 2, y);
+            doc.setTextColor(...PDF_CONFIG.cor_texto);
+        } else if (tot.orcamento_aprovado) {
             doc.setTextColor(...PDF_CONFIG.cor_verde);
             const dataAp = tot.orcamento_aprovado_em
                 ? new Date(tot.orcamento_aprovado_em).toLocaleString('pt-BR') : '';
@@ -477,6 +565,121 @@ async function gerarPdfInspecao(inspecaoId, callbacks = {}) {
         }
         doc.setTextColor(...PDF_CONFIG.cor_texto);
         y += 6;
+    }
+
+    // --- Fase 10: TORQUES APLICADOS ---
+    if (torques && torques.length > 0) {
+        if (y > 225) { doc.addPage(); y = 20; }
+        y += 4;
+
+        doc.setFillColor(...PDF_CONFIG.cor_secundaria);
+        doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 6, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('TORQUES APLICADOS', M + 2, y + 4);
+        doc.text('NOMINAL', M + 95, y + 4);
+        doc.text('APLICADO', M + 125, y + 4);
+        doc.text('SITUACAO', PDF_CONFIG.largura - M - 2, y + 4, { align: 'right' });
+        y += 8;
+
+        doc.setTextColor(...PDF_CONFIG.cor_texto);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+
+        for (const tq of torques) {
+            if (y > 258) { doc.addPage(); y = 20; }
+            const fora = tq.situacao === 'frouxo' || tq.situacao === 'apertado';
+
+            doc.text(doc.splitTextToSize(tq.fixador || '-', 90).slice(0, 1), M + 2, y + 3);
+            doc.text(tq.torque_nominal != null ? `${tq.torque_nominal} Nm` : '-', M + 95, y + 3);
+            doc.text(`${tq.torque_aplicado} Nm`, M + 125, y + 3);
+
+            doc.setTextColor(...(fora ? PDF_CONFIG.cor_vermelho : PDF_CONFIG.cor_verde));
+            doc.setFont('helvetica', 'bold');
+            const sit = tq.situacao === 'ok' ? 'na spec' : tq.situacao;
+            const pct = tq.desvio_pct != null
+                ? ` (${tq.desvio_pct > 0 ? '+' : ''}${tq.desvio_pct}%)` : '';
+            doc.text(sit + pct, PDF_CONFIG.largura - M - 2, y + 3, { align: 'right' });
+            doc.setTextColor(...PDF_CONFIG.cor_texto);
+            doc.setFont('helvetica', 'normal');
+            y += 5;
+        }
+
+        const quem = torques.find(t => t.aplicado_por);
+        if (quem) {
+            doc.setFontSize(7);
+            doc.setTextColor(...PDF_CONFIG.cor_claro);
+            doc.text(`Aplicado por ${quem.aplicado_por}`, M + 2, y + 2);
+            doc.setTextColor(...PDF_CONFIG.cor_texto);
+            doc.setFontSize(8);
+            y += 5;
+        }
+        y += 3;
+    }
+
+    // --- Fase 10: TESTE DE RODAGEM ---
+    if (rodagem) {
+        if (y > 225) { doc.addPage(); y = 20; }
+        y += 4;
+
+        doc.setFillColor(...PDF_CONFIG.cor_secundaria);
+        doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 6, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('TESTE DE RODAGEM', M + 2, y + 4);
+        y += 9;
+
+        doc.setTextColor(...PDF_CONFIG.cor_texto);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+
+        const condicoes = { seca: 'pista seca', molhada: 'pista molhada', mista: 'pista mista' };
+        const infos = [];
+        if (rodagem.km_percorridos) infos.push(`${rodagem.km_percorridos} km percorridos`);
+        if (rodagem.condicao_pista) infos.push(condicoes[rodagem.condicao_pista] || rodagem.condicao_pista);
+        if (rodagem.piloto_nome)    infos.push(`piloto: ${rodagem.piloto_nome}`);
+        if (infos.length) { doc.text(infos.join(' · '), M + 2, y); y += 5; }
+
+        let catAtual = null;
+        for (const it of (rodagemItens || [])) {
+            if (y > 258) { doc.addPage(); y = 20; }
+            const cat = it.rodagem_itens?.categoria || 'Geral';
+            if (cat !== catAtual) {
+                catAtual = cat;
+                doc.setFillColor(240, 240, 240);
+                doc.rect(M, y, PDF_CONFIG.largura - 2 * M, 5, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.text(cat, M + 2, y + 3.5);
+                doc.setFont('helvetica', 'normal');
+                y += 6;
+            }
+
+            doc.text(doc.splitTextToSize(it.rodagem_itens?.descricao || '-', 120).slice(0, 1),
+                     M + 2, y + 3);
+
+            const mapa = {
+                ok:     { t: 'OK',   c: PDF_CONFIG.cor_verde },
+                nao_ok: { t: 'N-OK', c: PDF_CONFIG.cor_vermelho },
+                na:     { t: 'N/A',  c: PDF_CONFIG.cor_cinza }
+            };
+            const sm = mapa[it.status] || { t: '-', c: PDF_CONFIG.cor_cinza };
+            doc.setTextColor(...sm.c); doc.setFont('helvetica', 'bold');
+            doc.text(sm.t, M + 128, y + 3);
+            doc.setTextColor(...PDF_CONFIG.cor_texto); doc.setFont('helvetica', 'normal');
+
+            if (it.observacao) {
+                doc.text(doc.splitTextToSize(it.observacao, 45).slice(0, 1),
+                         M + 142, y + 3);
+            }
+            y += 5;
+        }
+
+        if (rodagem.observacoes) {
+            if (y > 252) { doc.addPage(); y = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.text('Observacoes do teste:', M + 2, y + 3); y += 4;
+            doc.setFont('helvetica', 'normal');
+            const lo = doc.splitTextToSize(rodagem.observacoes, PDF_CONFIG.largura - 2 * M - 4);
+            doc.text(lo, M + 2, y + 3);
+            y += lo.length * 4;
+        }
+        y += 4;
     }
 
     // --- Fase 9: RECOMENDACOES FUTURAS ---

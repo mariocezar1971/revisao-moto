@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#dc2626">
+  <title>Comparar revisões · Revisão Moto</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: "class" };</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen">
+
+<header class="header-app p-4 dark:bg-slate-800">
+  <div class="flex items-center gap-3 max-w-3xl mx-auto">
+    <a href="./index.html" class="text-slate-300 hover:text-white text-xl">←</a>
+    <div>
+      <h1 class="text-lg font-bold text-white">Comparar revisões</h1>
+      <p class="text-xs text-slate-300">O que mudou de uma revisão para a outra</p>
+    </div>
+  </div>
+</header>
+
+<main class="p-4 max-w-3xl mx-auto pb-12">
+
+  <!-- Seleção da moto -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Placa</label>
+    <input id="busca-placa" placeholder="Digite a placa" autocomplete="off" oninput="buscarMoto()"
+           class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg uppercase text-base">
+    <div id="resultados-moto" class="mt-2"></div>
+  </div>
+
+  <!-- Seleção do par -->
+  <div id="bloco-par" class="hidden bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Revisão a comparar</label>
+    <select id="sel-par" onchange="carregarComparacao()"
+            class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-base">
+    </select>
+    <p class="text-xs text-slate-400 mt-1">
+      Cada opção compara a revisão com a imediatamente anterior da mesma moto.
+    </p>
+  </div>
+
+  <!-- Resumo -->
+  <div id="bloco-resumo" class="hidden bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4">
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div>
+        <div id="r-piorou" class="text-2xl font-bold text-red-600">0</div>
+        <div class="text-xs text-slate-500">pioraram</div>
+      </div>
+      <div>
+        <div id="r-estavel" class="text-2xl font-bold text-slate-600 dark:text-slate-300">0</div>
+        <div class="text-xs text-slate-500">estáveis</div>
+      </div>
+      <div>
+        <div id="r-melhorou" class="text-2xl font-bold text-green-600">0</div>
+        <div class="text-xs text-slate-500">melhoraram</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela comparativa -->
+  <div id="conteudo" class="space-y-4">
+    <p class="text-slate-500 text-center py-8">Escolha uma moto para começar</p>
+  </div>
+
+  <!-- Evolução de um item -->
+  <div id="bloco-evolucao" class="hidden bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mt-4">
+    <h2 class="font-bold text-slate-900 dark:text-white mb-2">Evolução de um item</h2>
+    <select id="sel-chave" onchange="carregarEvolucao()"
+            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm mb-3">
+    </select>
+    <div id="grafico"></div>
+    <div id="tabela-evolucao" class="mt-3 text-sm"></div>
+  </div>
+</main>
+
+<script src="./src/supabase-client.js"></script>
+<script src="./src/auth.js"></script>
+<script src="./src/darkmode.js"></script>
+<script src="./src/i18n.js"></script>
+<script src="./src/inspecao.js"></script>
+<script src="./src/comparacao.js"></script>
+<script>
+let motoAtual = null;
+let pares = [];
+
+async function boot() {
+  await exigirLogin();
+  const p = new URLSearchParams(location.search).get('placa');
+  if (p) {
+    document.getElementById('busca-placa').value = p.toUpperCase();
+    buscarMoto();
+  }
+}
+
+// ---------- moto ----------
+let timerBusca = null;
+function buscarMoto() {
+  clearTimeout(timerBusca);
+  timerBusca = setTimeout(async () => {
+    const termo = document.getElementById('busca-placa').value.trim();
+    const cont = document.getElementById('resultados-moto');
+    if (termo.length < 2) { cont.innerHTML = ''; return; }
+
+    const motos = await window.buscarMotosPorPlaca(termo);
+    if (!motos.length) {
+      cont.innerHTML = '<p class="text-sm text-slate-500 py-2">Nenhuma moto encontrada</p>';
+      return;
+    }
+    cont.innerHTML = motos.map(m => `
+      <button onclick="escolherMoto(${m.id}, '${esc(m.placa)}', '${esc(m.modelo)}')"
+              class="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded dark:text-white">
+        <span class="font-medium">${esc(m.placa)}</span>
+        <span class="text-sm text-slate-500"> · ${esc(m.modelo)}</span>
+      </button>`).join('');
+  }, 250);
+}
+
+async function escolherMoto(id, placa, modelo) {
+  motoAtual = { id, placa, modelo };
+  document.getElementById('resultados-moto').innerHTML = '';
+  document.getElementById('busca-placa').value = placa;
+
+  pares = await window.comparacao.inspecoesComparaveis(id);
+  const comAnterior = pares.filter(p => p.inspecao_anterior);
+
+  const sel = document.getElementById('sel-par');
+  if (!comAnterior.length) {
+    document.getElementById('bloco-par').classList.add('hidden');
+    document.getElementById('bloco-resumo').classList.add('hidden');
+    document.getElementById('bloco-evolucao').classList.add('hidden');
+    document.getElementById('conteudo').innerHTML = `
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 text-center shadow-sm">
+        <p class="font-medium text-slate-900 dark:text-white">Ainda não há o que comparar</p>
+        <p class="text-sm text-slate-500 mt-1">
+          A comparação precisa de pelo menos duas revisões finalizadas desta moto.
+        </p>
+      </div>`;
+    return;
+  }
+
+  sel.innerHTML = comAnterior.map(p => `
+    <option value="${p.inspecao_anterior}|${p.inspecao_atual}">
+      OS ${p.os_atual} (${fmt(p.km_atual)} km) vs OS ${p.os_anterior} (${fmt(p.km_anterior)} km)
+    </option>`).join('');
+  document.getElementById('bloco-par').classList.remove('hidden');
+
+  await carregarComparacao();
+  await montarSeletorEvolucao();
+}
+
+// ---------- comparação ----------
+async function carregarComparacao() {
+  const val = document.getElementById('sel-par').value;
+  if (!val) return;
+  const [a, b] = val.split('|');
+
+  const cont = document.getElementById('conteudo');
+  cont.innerHTML = '<p class="text-slate-500 text-center py-6">Carregando...</p>';
+
+  const linhas = await window.comparacao.compararInspecoes(a, b);
+  if (!linhas.length) {
+    cont.innerHTML = `
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 text-center shadow-sm">
+        <p class="text-slate-500">Nenhuma medição em comum entre as duas revisões</p>
+      </div>`;
+    document.getElementById('bloco-resumo').classList.add('hidden');
+    return;
+  }
+
+  const r = window.comparacao.resumir(linhas);
+  document.getElementById('r-piorou').textContent = r.piorou;
+  document.getElementById('r-estavel').textContent = r.estavel + r.novo;
+  document.getElementById('r-melhorou').textContent = r.melhorou;
+  document.getElementById('bloco-resumo').classList.remove('hidden');
+
+  const grupos = window.comparacao.agruparPorCategoria(linhas);
+  cont.innerHTML = Object.entries(grupos).map(([cat, itens]) => `
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+      <h2 class="font-bold text-red-600 mb-3">${esc(cat)}</h2>
+      <div class="space-y-3">
+        ${itens.map(i => `
+          <div class="border-b border-slate-100 dark:border-slate-700 last:border-0 pb-2 last:pb-0">
+            <div class="flex justify-between items-start gap-2">
+              <span class="text-sm text-slate-800 dark:text-slate-100 flex-1">${esc(i.descricao)}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
+                    style="background:${i.cor.bg};color:${i.cor.texto}">
+                ${i.seta} ${i.cor.rotulo}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 mt-1 text-sm">
+              <span class="text-slate-400">${i.anterior}</span>
+              <span class="text-slate-300">→</span>
+              <span class="font-semibold ${semaforoClasse(i.semaforo)}">${i.atual}</span>
+              <span class="text-xs text-slate-500 ml-auto">${i.variacao}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function semaforoClasse(s) {
+  if (s === 'vermelho') return 'text-red-600';
+  if (s === 'amarelo')  return 'text-amber-600';
+  if (s === 'verde')    return 'text-green-700 dark:text-green-400';
+  return 'text-slate-700 dark:text-slate-200';
+}
+
+// ---------- evolução ----------
+async function montarSeletorEvolucao() {
+  const chaves = await window.comparacao.chavesComHistorico(motoAtual.id);
+  const sel = document.getElementById('sel-chave');
+  if (!chaves.length) {
+    document.getElementById('bloco-evolucao').classList.add('hidden');
+    return;
+  }
+  sel.innerHTML = chaves.map(c =>
+    `<option value="${esc(c.chave)}">${esc(c.descricao)} (${c.medicoes} medições)</option>`).join('');
+  document.getElementById('bloco-evolucao').classList.remove('hidden');
+  await carregarEvolucao();
+}
+
+async function carregarEvolucao() {
+  const chave = document.getElementById('sel-chave').value;
+  if (!chave || !motoAtual) return;
+
+  const serie = await window.comparacao.historicoMedicao(motoAtual.id, chave);
+  document.getElementById('grafico').innerHTML =
+    window.comparacao.graficoEvolucao(serie, { largura: 340, altura: 170 });
+
+  document.getElementById('tabela-evolucao').innerHTML = serie.map(p => `
+    <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 last:border-0">
+      <span class="text-slate-600 dark:text-slate-300">
+        OS ${esc(p.numero_os || '—')} · ${fmt(p.km_registrado)} km
+      </span>
+      <span class="font-medium ${semaforoClasse(p.semaforo)}">
+        ${Number(p.valor).toFixed(2).replace('.', ',')} ${esc(p.unidade || '')}
+      </span>
+    </div>`).join('');
+}
+
+function fmt(n) { return (Number(n) || 0).toLocaleString('pt-BR'); }
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+boot();
+</script>
+</body>
+</html>

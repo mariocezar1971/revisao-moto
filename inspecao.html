@@ -76,6 +76,27 @@
         <textarea id="input-queixa" rows="3" placeholder="Ex: barulho na frente quando freia"
                class="w-full px-3 py-2.5 border border-slate-300 rounded-lg mb-4 dark:bg-slate-700 dark:text-white"></textarea>
 
+        <!-- Fase 10: tipo de execucao -->
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Tipo de serviço</label>
+        <div id="tipos-execucao" class="grid grid-cols-3 gap-2 mb-3"></div>
+
+        <div id="bloco-servico-rapido" class="hidden mb-3">
+            <label class="block text-sm text-slate-700 dark:text-slate-200 mb-1">Qual serviço</label>
+            <select id="sel-servico-rapido" onchange="escolherServicoRapido()"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-base">
+            </select>
+            <p id="previa-servico" class="text-xs text-slate-500 mt-1"></p>
+        </div>
+
+        <!-- Fase 10: garantia -->
+        <div id="aviso-garantia" class="hidden mb-3 p-3 bg-blue-50 dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg">
+            <p id="texto-garantia" class="text-sm text-blue-900 dark:text-blue-200"></p>
+        </div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Cobrança</label>
+        <select id="sel-cobranca"
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg mb-4 text-base">
+        </select>
+
         <button onclick="iniciarInspecao()" id="btn-iniciar"
                 class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg">
             Iniciar inspeção
@@ -97,6 +118,61 @@
                        text-slate-600 dark:text-slate-300 font-medium hover:border-red-400 hover:text-red-600">
             + Adicionar item fora do checklist
         </button>
+    </div>
+
+    <!-- Fase 10: torques aplicados -->
+    <div id="bloco-torques" class="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold text-slate-900 dark:text-white">Torques aplicados</h3>
+            <span id="resumo-torques" class="text-xs text-slate-500"></span>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Registre o torque real dos fixadores críticos. Fica gravado quem apertou e com quanto.
+        </p>
+        <div id="lista-torques" class="space-y-2"></div>
+    </div>
+
+    <!-- Fase 10: teste de rodagem -->
+    <div id="bloco-rodagem" class="mt-4 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-900 dark:text-white">Teste de rodagem</h3>
+            <span id="resumo-rodagem" class="text-xs text-slate-500"></span>
+        </div>
+        <div id="rodagem-nao-iniciada">
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                    <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Km inicial</label>
+                    <input type="number" id="rod-km-inicial" inputmode="numeric"
+                           class="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Condição da pista</label>
+                    <select id="rod-condicao"
+                            class="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded text-sm"></select>
+                </div>
+            </div>
+            <button onclick="iniciarRodagem()"
+                    class="w-full py-2 bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg text-sm font-medium">
+                Iniciar teste de rodagem
+            </button>
+        </div>
+        <div id="rodagem-em-curso" class="hidden">
+            <div id="lista-rodagem" class="space-y-3 mb-3"></div>
+            <div class="flex gap-2 items-end">
+                <div class="flex-1">
+                    <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">Km final</label>
+                    <input type="number" id="rod-km-final" inputmode="numeric"
+                           class="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded text-sm">
+                </div>
+                <button onclick="encerrarRodagem()"
+                        class="px-4 py-2 bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg text-sm font-medium">
+                    Encerrar teste
+                </button>
+            </div>
+            <textarea id="rod-observacoes" rows="2" placeholder="Observações do teste"
+                      oninput="salvarObsRodagem()"
+                      class="w-full mt-2 px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded text-sm"></textarea>
+        </div>
     </div>
 
     <!-- Fase 8: orcamento -->
@@ -264,6 +340,10 @@
 <script src="./src/camera.js"></script>
 <script src="./src/assinatura.js"></script>
 <script src="./src/recebimento.js"></script>
+<script src="./src/servicos.js"></script>
+<script src="./src/garantia.js"></script>
+<script src="./src/torque.js"></script>
+<script src="./src/rodagem.js"></script>
 <script src="./src/medicoes.js"></script>
 <script src="./src/avulsos.js"></script>
 <script src="./src/orcamento.js"></script>
@@ -389,7 +469,11 @@ async function iniciarInspecao() {
                     km_registrado: km,
                     mecanico_id: usuario.id,
                     mecanico_nome: nomeMec,
-                    queixa_cliente: (document.getElementById('input-queixa')?.value || '').trim() || null
+                    queixa_cliente: (document.getElementById('input-queixa')?.value || '').trim() || null,
+                    tipo_execucao: _tipoExec,
+                    servico_rapido_id: _tipoExec === 'rapida' ? _servicoSel : null,
+                    tipo_cobranca: document.getElementById('sel-cobranca')?.value || 'pago',
+                    inspecao_origem: window._garantiaOrigem || null
                 });
             } else {
                 inspecao = existente;
@@ -400,6 +484,10 @@ async function iniciarInspecao() {
                 revisao_id: revisaoId,
                 km_registrado: km,
                 queixa_cliente: (document.getElementById('input-queixa')?.value || '').trim() || null,
+                tipo_execucao: _tipoExec,
+                servico_rapido_id: _tipoExec === 'rapida' ? _servicoSel : null,
+                tipo_cobranca: document.getElementById('sel-cobranca')?.value || 'pago',
+                inspecao_origem: window._garantiaOrigem || null,
                 mecanico_id: usuario.id,
                 mecanico_nome: nomeMec
             });
@@ -412,6 +500,10 @@ async function iniciarInspecao() {
 
         // Fase 9: vincula a vistoria de entrada, se veio de recebimento.html
         vincularRecebimento().catch(e => console.warn(e));
+
+        // Fase 10: torques do modelo e teste de rodagem em curso
+        if (window.torque)  carregarTorques().catch(e => console.warn(e));
+        if (window.rodagem) retomarRodagem().catch(e => console.warn(e));
 
         // Fase 8: carrega itens avulsos e orcamento desta inspecao
         if (window.avulsos)   recarregarAvulsos().catch(e => console.warn(e));
@@ -721,10 +813,25 @@ async function confirmarFinalizacao() {
     if (!assinaturaMec || !assinaturaMec.foiTocado()) { toast('Falta assinatura do mecânico', 'erro'); return; }
     if (!assinaturaCli || !assinaturaCli.foiTocado()) { toast('Falta assinatura do cliente', 'erro'); return; }
 
+    // Fase 10: a regra de completude muda conforme o tipo de execucao.
+    // Uma revisao rapida nunca teria todos os itens da revisao completa.
+    if (window.servicos) {
+        const estTipo = await window.servicos.podeFinalizar(window.estadoInspecao.inspecao.id);
+        if (estTipo && !estTipo.pode_finalizar) {
+            toast(estTipo.motivo, 'erro');
+            return;
+        }
+    }
+
     // Fase 8: orcamento com valor precisa de aprovacao previa (CDC art. 40)
     if (window.orcamento) {
+        // Servico em garantia ou cortesia nao cobra do cliente, entao nao
+        // faz sentido exigir a aprovacao previa de um orcamento zerado.
+        const tipoCob = window.estadoInspecao.inspecao.tipo_cobranca || 'pago';
+        const cobra = !window.garantia || window.garantia.cobraDoCliente(tipoCob);
+
         const estOrc = await window.orcamento.podeExecutar(window.estadoInspecao.inspecao.id);
-        if (!estOrc.pode) {
+        if (cobra && !estOrc.pode) {
             toast(estOrc.motivo, 'erro');
             abrirModalAprovacao();
             return;
@@ -1251,6 +1358,325 @@ async function vincularRecebimento() {
         await window.recebimento.vincularInspecao(recId, window.estadoInspecao.inspecao.id);
     } catch (e) { console.warn('vincularRecebimento:', e); }
 }
+</script>
+<script>
+// ============================================================
+// FASE 10 :: estado
+// ============================================================
+let _tipoExec = 'completa';
+let _servicoSel = null;
+let _rodagemAtual = null;
+let _itensRodagem = [];
+let _respRodagem = {};
+let _torquesSpec = [];
+
+// ============================================================
+// 14. TIPO DE EXECUCAO (completa / rapida / avulsa)
+// ============================================================
+function montarTiposExecucao() {
+    const cont = document.getElementById('tipos-execucao');
+    if (!cont || !window.servicos) return;
+    cont.innerHTML = window.servicos.TIPOS_EXECUCAO.map(t => `
+        <button type="button" id="tipo-${t.valor}" onclick="escolherTipo('${t.valor}')"
+                title="${escapeHtml(t.descricao)}"
+                class="py-2 px-1 rounded-lg border text-xs font-medium
+                       border-slate-300 dark:border-slate-600 dark:text-white">
+            ${escapeHtml(t.rotulo)}
+        </button>`).join('');
+    escolherTipo('completa');
+}
+
+function escolherTipo(tipo) {
+    _tipoExec = tipo;
+    window.servicos.TIPOS_EXECUCAO.forEach(t => {
+        const b = document.getElementById(`tipo-${t.valor}`);
+        if (!b) return;
+        const ativo = t.valor === tipo;
+        b.className = 'py-2 px-1 rounded-lg border text-xs font-medium ' + (ativo
+            ? 'bg-red-600 text-white border-red-600'
+            : 'border-slate-300 dark:border-slate-600 dark:text-white');
+    });
+    document.getElementById('bloco-servico-rapido')
+        .classList.toggle('hidden', tipo !== 'rapida');
+    if (tipo === 'rapida') carregarServicosRapidos();
+}
+
+async function carregarServicosRapidos() {
+    const sel = document.getElementById('sel-servico-rapido');
+    if (sel.options.length > 0) { escolherServicoRapido(); return; }
+
+    const servs = await window.servicos.listarServicos();
+    sel.innerHTML = servs.map(s =>
+        `<option value="${s.id}">${escapeHtml(s.nome)} (${window.servicos.formatarTempo(s.tempo_min)})</option>`
+    ).join('');
+    escolherServicoRapido();
+}
+
+async function escolherServicoRapido() {
+    const sel = document.getElementById('sel-servico-rapido');
+    _servicoSel = parseInt(sel.value) || null;
+    const prev = document.getElementById('previa-servico');
+    const revId = parseInt(document.getElementById('select-revisao')?.value) || null;
+
+    if (!_servicoSel || !revId) { prev.textContent = ''; return; }
+
+    const c = await window.servicos.contarItens(_servicoSel, revId);
+    prev.textContent = c.total === 0
+        ? 'Este serviço não tem itens nesta revisão'
+        : `${c.total} ite${c.total === 1 ? 'm' : 'ns'} · ${c.obrigatorios} obrigatório(s)`;
+}
+
+// ============================================================
+// 12. GARANTIA
+// ============================================================
+function montarSeletorCobranca() {
+    const sel = document.getElementById('sel-cobranca');
+    if (!sel || !window.garantia || sel.options.length > 0) return;
+    sel.innerHTML = window.garantia.TIPOS_COBRANCA.map(t =>
+        `<option value="${t.valor}">${escapeHtml(t.rotulo)}</option>`).join('');
+}
+
+/** Ao escolher a moto, checa se ela tem garantia nossa em curso. */
+async function checarGarantia(motoId) {
+    if (!window.garantia) return;
+    const s = await window.garantia.sugerirCobranca(motoId);
+    const aviso = document.getElementById('aviso-garantia');
+    const texto = document.getElementById('texto-garantia');
+    const sel = document.getElementById('sel-cobranca');
+
+    if (s.garantia) {
+        texto.textContent = `Esta moto tem serviço nosso em garantia: ${s.motivo}`;
+        aviso.classList.remove('hidden');
+        sel.value = 'garantia_oficina';
+        window._garantiaOrigem = s.garantia.inspecao_id;
+    } else {
+        aviso.classList.add('hidden');
+        sel.value = 'pago';
+        window._garantiaOrigem = null;
+    }
+}
+
+// ============================================================
+// 13. TORQUES
+// ============================================================
+async function carregarTorques() {
+    if (!window.torque || !window.estadoInspecao?.moto) return;
+    const modeloId = window.estadoInspecao.moto.modelo_id;
+    if (!modeloId) return;
+
+    _torquesSpec = await window.torque.torquesDoModelo(modeloId);
+    const registrados = await window.torque.listarTorques(window.estadoInspecao.inspecao.id);
+    const porFixador = {};
+    registrados.forEach(t => { porFixador[t.fixador] = t; });
+
+    const cont = document.getElementById('lista-torques');
+    if (!_torquesSpec.length) {
+        cont.innerHTML = '<p class="text-xs text-slate-500">Sem torques cadastrados para este modelo</p>';
+        return;
+    }
+
+    cont.innerHTML = _torquesSpec.map((t, i) => {
+        const r = porFixador[t.fixador];
+        return `
+        <div class="border-b border-slate-100 dark:border-slate-700 last:border-0 pb-2 last:pb-0">
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-slate-800 dark:text-slate-100">${escapeHtml(t.fixador)}</span>
+                <span class="text-xs text-slate-400">${escapeHtml(t.texto || '')}</span>
+            </div>
+            <div class="flex gap-2 items-center mt-1">
+                <input type="text" id="tq-${i}" inputmode="decimal"
+                       value="${r ? r.torque_aplicado : ''}"
+                       placeholder="${t.nominal || ''}"
+                       oninput="avaliarTorque(${i})"
+                       onchange="salvarTorque(${i})"
+                       class="w-24 px-2 py-1.5 border-2 border-slate-300 rounded text-sm">
+                <span class="text-xs text-slate-500">Nm</span>
+                <span id="tq-fb-${i}" class="text-xs font-medium"></span>
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">
+                aceita ${window.torque.textoFaixa(t.nominal, 10)}
+            </div>
+        </div>`;
+    }).join('');
+
+    _torquesSpec.forEach((t, i) => { if (porFixador[t.fixador]) avaliarTorque(i); });
+    atualizarResumoTorques();
+}
+
+function avaliarTorque(i) {
+    const t = _torquesSpec[i];
+    const input = document.getElementById(`tq-${i}`);
+    const fb = document.getElementById(`tq-fb-${i}`);
+    if (!t || !input) return;
+    window.torque.aplicarCor(input, t.nominal, 10, fb);
+}
+
+async function salvarTorque(i) {
+    const t = _torquesSpec[i];
+    const input = document.getElementById(`tq-${i}`);
+    if (!t || !input) return;
+
+    const valor = window.torque.normalizarNumero(input.value);
+    if (valor == null || valor <= 0) return;
+
+    try {
+        const usuario = await getUsuarioAtual();
+        const mec = usuario.user_metadata?.nome_completo || usuario.email;
+        await window.torque.registrarTorque(window.estadoInspecao.inspecao.id, {
+            fixador: t.fixador,
+            nominal: t.nominal,
+            aplicado: valor,
+            toleranciaPct: 10,
+            aplicadoPor: mec
+        });
+        autosaveStatus('salvo \u2713', 'salvo');
+        atualizarResumoTorques();
+    } catch (e) {
+        console.warn('salvarTorque:', e);
+        autosaveStatus('erro ao salvar', 'erro');
+    }
+}
+
+async function atualizarResumoTorques() {
+    const el = document.getElementById('resumo-torques');
+    if (!el) return;
+    const lista = await window.torque.listarTorques(window.estadoInspecao.inspecao.id);
+    const r = window.torque.resumir(lista);
+    if (r.total === 0) { el.textContent = ''; return; }
+    el.textContent = r.fora_spec > 0
+        ? `${r.total} registrado(s) · ${r.fora_spec} fora de spec`
+        : `${r.total} registrado(s) · todos na spec`;
+    el.className = 'text-xs ' + (r.fora_spec > 0 ? 'text-amber-600' : 'text-green-600');
+}
+
+// ============================================================
+// 11. TESTE DE RODAGEM
+// ============================================================
+function montarCondicoesPista() {
+    const sel = document.getElementById('rod-condicao');
+    if (!sel || !window.rodagem || sel.options.length > 0) return;
+    sel.innerHTML = window.rodagem.CONDICOES_PISTA.map(c =>
+        `<option value="${c.valor}">${escapeHtml(c.rotulo)}</option>`).join('');
+}
+
+async function iniciarRodagem() {
+    try {
+        const usuario = await getUsuarioAtual();
+        const mec = usuario.user_metadata?.nome_completo || usuario.email;
+        const km = parseInt(document.getElementById('rod-km-inicial').value) || null;
+
+        _rodagemAtual = await window.rodagem.iniciarRodagem(
+            window.estadoInspecao.inspecao.id, km, mec);
+
+        const cond = document.getElementById('rod-condicao').value;
+        if (cond) await window.rodagem.atualizarRodagem(_rodagemAtual.id, { condicao_pista: cond });
+
+        document.getElementById('rodagem-nao-iniciada').classList.add('hidden');
+        document.getElementById('rodagem-em-curso').classList.remove('hidden');
+        await renderRodagem();
+    } catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+async function renderRodagem() {
+    if (!_itensRodagem.length) {
+        _itensRodagem = await window.rodagem.listarItensRodagem();
+    }
+    _respRodagem = await window.rodagem.listarRespostas(_rodagemAtual.id);
+
+    const grupos = window.rodagem.agruparPorCategoria(_itensRodagem);
+    document.getElementById('lista-rodagem').innerHTML =
+        Object.entries(grupos).map(([cat, itens]) => `
+        <div>
+            <p class="text-xs font-bold text-slate-500 uppercase mb-1">${escapeHtml(cat)}</p>
+            ${itens.map(i => {
+                const r = _respRodagem[i.id] || {};
+                return `
+                <div class="flex items-center gap-2 py-1">
+                    <span class="flex-1 text-sm text-slate-800 dark:text-slate-100"
+                          title="${escapeHtml(i.ajuda || '')}">
+                        ${escapeHtml(i.descricao)}${i.obrigatorio ? '' : ' <span class="text-xs text-slate-400">(opcional)</span>'}
+                    </span>
+                    <div class="flex gap-1">
+                        ${['ok','nao_ok','na'].map(s => `
+                            <button type="button" onclick="marcarRodagem(${i.id}, '${s}')"
+                                    id="rod-${i.id}-${s}"
+                                    class="px-2 py-1 text-xs rounded border ${r.status === s
+                                        ? (s === 'ok' ? 'bg-green-600 text-white border-green-600'
+                                          : s === 'nao_ok' ? 'bg-red-600 text-white border-red-600'
+                                          : 'bg-slate-500 text-white border-slate-500')
+                                        : 'border-slate-300 dark:border-slate-600 dark:text-white'}">
+                                ${s === 'ok' ? 'OK' : s === 'nao_ok' ? 'N-OK' : 'N/A'}
+                            </button>`).join('')}
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`).join('');
+
+    atualizarResumoRodagem();
+}
+
+async function marcarRodagem(itemId, status) {
+    try {
+        await window.rodagem.marcarItem(_rodagemAtual.id, itemId, status);
+        _respRodagem[itemId] = { item_id: itemId, status };
+        await renderRodagem();
+        autosaveStatus('salvo \u2713', 'salvo');
+    } catch (e) { console.warn('marcarRodagem:', e); }
+}
+
+function atualizarResumoRodagem() {
+    const el = document.getElementById('resumo-rodagem');
+    if (!el || !window.rodagem) return;
+    const p = window.rodagem.progressoLocal(_itensRodagem, _respRodagem);
+    el.textContent = `${p.preenchidos}/${p.total_itens}` +
+        (p.reprovados > 0 ? ` · ${p.reprovados} reprovado(s)` : '');
+    el.className = 'text-xs ' + (p.reprovados > 0 ? 'text-red-600'
+        : p.completo ? 'text-green-600' : 'text-slate-500');
+}
+
+let _timerObsRod = null;
+function salvarObsRodagem() {
+    clearTimeout(_timerObsRod);
+    _timerObsRod = setTimeout(async () => {
+        if (!_rodagemAtual) return;
+        try {
+            await window.rodagem.atualizarRodagem(_rodagemAtual.id, {
+                observacoes: document.getElementById('rod-observacoes').value
+            });
+        } catch (e) { console.warn(e); }
+    }, 700);
+}
+
+async function encerrarRodagem() {
+    if (!_rodagemAtual) return;
+    const km = parseInt(document.getElementById('rod-km-final').value) || null;
+    try {
+        await window.rodagem.finalizarRodagem(_rodagemAtual.id, km);
+        autosaveStatus('teste encerrado', 'salvo');
+    } catch (e) { alert('Erro: ' + (e.message || e)); }
+}
+
+/** Retoma um teste de rodagem ja aberto ao reabrir a inspecao. */
+async function retomarRodagem() {
+    if (!window.rodagem || !window.estadoInspecao?.inspecao) return;
+    const r = await window.rodagem.obterRodagem(window.estadoInspecao.inspecao.id);
+    if (!r) return;
+    _rodagemAtual = r;
+    document.getElementById('rodagem-nao-iniciada').classList.add('hidden');
+    document.getElementById('rodagem-em-curso').classList.remove('hidden');
+    if (r.km_final) document.getElementById('rod-km-final').value = r.km_final;
+    if (r.observacoes) document.getElementById('rod-observacoes').value = r.observacoes;
+    await renderRodagem();
+}
+
+// Boot dos controles da Fase 10 na tela de selecao
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        montarTiposExecucao();
+        montarSeletorCobranca();
+        montarCondicoesPista();
+    }, 300);
+});
 </script>
 </body>
 </html>
