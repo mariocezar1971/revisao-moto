@@ -11,6 +11,11 @@
     <p>Stack: HTML/CSS/JS vanilla + Tailwind CDN + Supabase + GitHub Pages.</p>
     <p>Repo: github.com/mariocezar1971/revisao-moto</p>
     <p>Padrão: mesmo da Fase 0 do RideLink.</p>
+    <p>&#160;</p>
+    <p><b>Estado em 22/10/2026: fases 0 a 10 concluídas.</b></p>
+    <p>1.120 testes automatizados (./tests/run_tests.sh).</p>
+    <p>Migrations 001 a 010 aplicadas em produção (projeto jybfdknrxzlwpjyrayrb).</p>
+    <p>Resta o P4, que só compensa com escala.</p>
   </body>
 </html>
 </richcontent>
@@ -145,8 +150,9 @@
 <!-- ============================================================ -->
 <!-- FASE 2 - CRUD MOTOS                                            -->
 <!-- ============================================================ -->
-<node TEXT="Fase 2 - CRUD de Motos" POSITION="right" ID="ID_fase2" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#ff8c00">
+<node TEXT="Fase 2 - CRUD de Motos" POSITION="right" ID="ID_fase2" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#006400">
 <font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
 <icon BUILTIN="prepare"/>
 <edge COLOR="#ff8c00"/>
 <richcontent TYPE="NOTE"><html><body><p>Próxima fase. Estimativa: 1 fim de semana.</p></body></html></richcontent>
@@ -175,8 +181,9 @@
 <!-- ============================================================ -->
 <!-- FASE 3 - EXECUÇÃO DO CHECKLIST (CORE)            -->
 <!-- ============================================================ -->
-<node TEXT="Fase 3 - Execução do Checklist (CORE)" POSITION="right" ID="ID_fase3" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#cc0000">
+<node TEXT="Fase 3 - Execução do Checklist (CORE)" POSITION="right" ID="ID_fase3" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#006400">
 <font BOLD="true" SIZE="15"/>
+<icon BUILTIN="button_ok"/>
 <icon BUILTIN="gohome"/>
 <icon BUILTIN="bookmark"/>
 <edge COLOR="#cc0000" WIDTH="2"/>
@@ -242,8 +249,9 @@
 <!-- ============================================================ -->
 <!-- FASE 4 - ASSINATURA + PDF                                      -->
 <!-- ============================================================ -->
-<node TEXT="Fase 4 - Assinatura + PDF" POSITION="right" ID="ID_fase4" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#0066cc">
+<node TEXT="Fase 4 - Assinatura + PDF" POSITION="right" ID="ID_fase4" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#006400">
 <font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
 <icon BUILTIN="pencil"/>
 <edge COLOR="#0066cc"/>
 <richcontent TYPE="NOTE"><html><body><p>Estimativa: 1 fim de semana.</p></body></html></richcontent>
@@ -288,8 +296,9 @@
 <!-- ============================================================ -->
 <!-- FASE 5 - HISTÓRICO                                      -->
 <!-- ============================================================ -->
-<node TEXT="Fase 5 - Histórico e Relatórios" POSITION="left" ID="ID_fase5" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#0066cc">
+<node TEXT="Fase 5 - Histórico e Relatórios" POSITION="left" ID="ID_fase5" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#006400">
 <font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
 <icon BUILTIN="list"/>
 <edge COLOR="#0066cc"/>
 <richcontent TYPE="NOTE"><html><body><p>Estimativa: 1 fim de semana.</p></body></html></richcontent>
@@ -329,8 +338,9 @@
 <!-- ============================================================ -->
 <!-- FASE 6 - OFFLINE                                               -->
 <!-- ============================================================ -->
-<node TEXT="Fase 6 - Offline completo" POSITION="left" ID="ID_fase6" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#0066cc">
+<node TEXT="Fase 6 - Offline completo" POSITION="left" ID="ID_fase6" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#006400">
 <font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
 <icon BUILTIN="broken-line"/>
 <edge COLOR="#0066cc"/>
 <richcontent TYPE="NOTE"><html><body><p>Estimativa: 1 fim de semana. Crítico para mecânico em garagem sem 4G.</p></body></html></richcontent>
@@ -368,8 +378,9 @@
 <!-- ============================================================ -->
 <!-- FASE 7 - POLIMENTO                                             -->
 <!-- ============================================================ -->
-<node TEXT="Fase 7 - Polimento" POSITION="left" ID="ID_fase7" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#0066cc">
+<node TEXT="Fase 7 - Polimento" POSITION="left" ID="ID_fase7" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#006400">
 <font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
 <icon BUILTIN="launch"/>
 <edge COLOR="#0066cc"/>
 
@@ -391,6 +402,113 @@
 </node>
 
 <!-- ============================================================ -->
+<!-- FASES 8, 9 e 10 - os tres niveis de prioridade do P-roadmap  -->
+<!-- ============================================================ -->
+<node TEXT="Fase 8 (P1) - Opera&#xe7;&#xe3;o real" POSITION="left" ID="ID_fase8" COLOR="#006400">
+<font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
+<edge COLOR="#006400"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>O que faltava para o app servir numa oficina de verdade,</p>
+<p>e nao so registrar que o item foi "olhado".</p>
+<p><b>145 testes. Migration 008 aplicada em producao.</b></p>
+</body></html></richcontent>
+<node TEXT="Medi&#xe7;&#xe3;o num&#xe9;rica com limites" ID="ID_f8_1"><icon BUILTIN="button_ok"/>
+<node TEXT="Sem&#xe1;foro verde/amarelo/vermelho contra o limite de servi&#xe7;o"/>
+<node TEXT="Taxa de desgaste e previs&#xe3;o de troca entre revis&#xf5;es"/>
+<node TEXT="chave_medicao casa o mesmo item f&#xed;sico quando a descri&#xe7;&#xe3;o muda"/>
+</node>
+<node TEXT="Queixa do cliente + resolu&#xe7;&#xe3;o" ID="ID_f8_2"><icon BUILTIN="button_ok"/>
+<node TEXT="O motivo real da visita n&#xe3;o cabia em checklist nenhum"/>
+</node>
+<node TEXT="Itens avulsos fora do checklist" ID="ID_f8_3"><icon BUILTIN="button_ok"/></node>
+<node TEXT="Pe&#xe7;as e or&#xe7;amento" ID="ID_f8_4"><icon BUILTIN="button_ok"/>
+<node TEXT="Assinatura de aprova&#xe7;&#xe3;o pr&#xe9;via separada da de conclus&#xe3;o (CDC art. 40)"/>
+</node>
+</node>
+
+<node TEXT="Fase 9 (P2) - Ciclo da oficina" POSITION="left" ID="ID_fase9" COLOR="#006400">
+<font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
+<edge COLOR="#006400"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Fecha o ciclo: a moto chega, &#xe9; vistoriada, revisada,</p>
+<p>entregue, e o cliente &#xe9; chamado de volta.</p>
+<p><b>136 testes. Migration 009 aplicada em producao em 22/10/2026.</b></p>
+</body></html></richcontent>
+<node TEXT="Checklist de recebimento (avarias)" ID="ID_f9_1"><icon BUILTIN="button_ok"/>
+<node TEXT="4 fotos obrigat&#xf3;rias, invent&#xe1;rio de avarias, combust&#xed;vel, acess&#xf3;rios"/>
+<node TEXT="Assinatura do cliente na ENTRADA, antes do servi&#xe7;o"/>
+</node>
+<node TEXT="Recomenda&#xe7;&#xf5;es futuras" ID="ID_f9_2"><icon BUILTIN="button_ok"/>
+<node TEXT="Congeladas no fechamento, saem no PDF e viram lead"/>
+</node>
+<node TEXT="Fotos antes/depois" ID="ID_f9_3"><icon BUILTIN="button_ok"/></node>
+<node TEXT="Lembrete autom&#xe1;tico ao CLIENTE" ID="ID_f9_4"><icon BUILTIN="button_ok"/>
+<node TEXT="wa.me, sem API paga; janela de 30 dias para n&#xe3;o repetir"/>
+</node>
+<node TEXT="N&#xfa;mero de OS (AAAA-NNNN)" ID="ID_f9_5"><icon BUILTIN="button_ok"/>
+<node TEXT="UUID ningu&#xe9;m dita no telefone"/>
+</node>
+</node>
+
+<node TEXT="Fase 10 (P3) - Vida da moto" POSITION="left" ID="ID_fase10" COLOR="#006400">
+<font BOLD="true" SIZE="14"/>
+<icon BUILTIN="button_ok"/>
+<icon BUILTIN="bookmark"/>
+<edge COLOR="#006400"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>O app para de olhar s&#xf3; a revis&#xe3;o de hoje e passa a olhar a</p>
+<p>hist&#xf3;ria da moto: o que mudou, o que est&#xe1; coberto, o que foi</p>
+<p>realmente apertado e quanto trabalho a visita de hoje pede.</p>
+<p><b>206 testes. Migration 010 aplicada em producao em 22/10/2026.</b></p>
+</body></html></richcontent>
+<node TEXT="Compara&#xe7;&#xe3;o entre revis&#xf5;es" ID="ID_f10_1"><icon BUILTIN="button_ok"/>
+<node TEXT="Diferen&#xe7;a item a item casada por chave_medicao"/>
+<node TEXT="Gr&#xe1;fico de evolu&#xe7;&#xe3;o com a linha do limite de servi&#xe7;o"/>
+<node TEXT="Tend&#xea;ncia respeita o tipo: faixa, desgaste ou teto"/>
+</node>
+<node TEXT="Teste de rodagem estruturado" ID="ID_f10_2"><icon BUILTIN="button_ok"/>
+<node TEXT="14 itens, km inicial/final, condi&#xe7;&#xe3;o de pista, respons&#xe1;vel"/>
+</node>
+<node TEXT="Garantia" ID="ID_f10_3"><icon BUILTIN="button_ok"/>
+<node TEXT="4 tipos de cobran&#xe7;a; 90 dias pelo CDC art. 26"/>
+<node TEXT="Retorno em garantia N&#xc3;O reinicia o prazo"/>
+</node>
+<node TEXT="Torque efetivamente aplicado" ID="ID_f10_4"><icon BUILTIN="button_ok"/>
+<node TEXT="Avaliado contra a spec com toler&#xe2;ncia de 10%"/>
+</node>
+<node TEXT="Revis&#xe3;o r&#xe1;pida vs completa" ID="ID_f10_5"><icon BUILTIN="button_ok"/>
+<node TEXT="completa / r&#xe1;pida (6 servi&#xe7;os) / avulsa"/>
+</node>
+<node TEXT="Bug pr&#xe9;-existente corrigido aqui" COLOR="#cc0000">
+<icon BUILTIN="messagebox_warning"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>vw_checklist_completo exp&#xf5;e a chave como item_id, mas o</p>
+<p>c&#xf3;digo usava item.id, que era undefined. Os bot&#xf5;es</p>
+<p>OK/N-OK/N/A chamavam marcarStatus(undefined) e o checklist</p>
+<p>n&#xe3;o salvava - em TODAS as vers&#xf5;es anteriores.</p>
+</body></html></richcontent>
+</node>
+</node>
+
+<node TEXT="P4 - O que resta" POSITION="left" ID="ID_p4" COLOR="#999999">
+<font BOLD="true" SIZE="14" ITALIC="true"/>
+<icon BUILTIN="hourglass"/>
+<edge COLOR="#999999"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Nada aqui vale a pena antes de escala: s&#xe3;o itens que s&#xf3;</p>
+<p>compensam com mais de uma oficina ou muito volume.</p>
+</body></html></richcontent>
+<node TEXT="Agendamento"/>
+<node TEXT="Estoque de pe&#xe7;as"/>
+<node TEXT="Multi-tenancy (mais de uma oficina)"/>
+<node TEXT="Leitura de VIN"/>
+<node TEXT="API p&#xfa;blica"/>
+<node TEXT="Nota fiscal"/>
+</node>
+
+<!-- ============================================================ -->
 <!-- BRANCH: STACK TÉCNICA                                   -->
 <!-- ============================================================ -->
 <node TEXT="Stack Técnica" POSITION="left" ID="ID_stack" CREATED="1750000000000" MODIFIED="1750000000000" COLOR="#666666">
@@ -401,13 +519,13 @@
 <node TEXT="HTML/CSS/JS vanilla (sem build)"/>
 <node TEXT="Tailwind CDN"/>
 <node TEXT="Service Worker (cache offline)"/>
-<node TEXT="IndexedDB (Fase 6)"/>
+<node TEXT="IndexedDB (Fase 6) - fila offline com backoff"/>
 <node TEXT="jsPDF (Fase 4)"/>
 </node>
 
 <node TEXT="Backend">
 <node TEXT="Supabase Auth"/>
-<node TEXT="Postgres (6 tabelas + 2 views)"/>
+<node TEXT="Postgres: 19 tabelas, 21 views, 23 fun&#xe7;&#xf5;es, 5 triggers"/>
 <node TEXT="Supabase Storage (bucket inspecoes)"/>
 <node TEXT="Realtime (futuro)"/>
 </node>
@@ -539,6 +657,37 @@
 <icon BUILTIN="flag"/>
 <node TEXT="Histórico consultável"/>
 <node TEXT="Funciona sem internet na garagem"/>
+</node>
+
+<node TEXT="M6: Oficina de verdade (Fase 8+9)" COLOR="#006400">
+<icon BUILTIN="flag"/>
+<icon BUILTIN="button_ok"/>
+<node TEXT="Medição numérica com semáforo, não mais texto livre"/>
+<node TEXT="Vistoria de entrada assinada protege a oficina"/>
+<node TEXT="Orçamento aprovado antes da execução (CDC art. 40)"/>
+<node TEXT="Número de OS que o cliente consegue ditar"/>
+</node>
+
+<node TEXT="M7: História da moto (Fase 10)" COLOR="#006400">
+<icon BUILTIN="flag"/>
+<icon BUILTIN="button_ok"/>
+<icon BUILTIN="bookmark"/>
+<node TEXT="Desgaste visível entre revisões, com previsão de troca"/>
+<node TEXT="Garantia de 90 dias controlada pelo sistema"/>
+<node TEXT="Torque aplicado registrado, não só o recomendado"/>
+<node TEXT="Troca de óleo deixa de abrir checklist de 22 itens"/>
+</node>
+
+<node TEXT="M8: Próximo marco real" COLOR="#b45309">
+<icon BUILTIN="flag"/>
+<icon BUILTIN="help"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Não é código: é uso. Rodar um mês de revisões reais com</p>
+<p>tudo isso ligado e ver o que o campo contradiz.</p>
+<p>O P4 só faz sentido depois disso.</p>
+</body></html></richcontent>
+<node TEXT="Um mês de operação real com as fases 8 a 10 ligadas"/>
+<node TEXT="Decidir o P4 com base no que o uso mostrar"/>
 </node>
 </node>
 
