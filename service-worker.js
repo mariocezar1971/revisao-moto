@@ -3,7 +3,7 @@
 // Estrategia: cache-first para app shell, network-first para Supabase
 // =====================================================================
 
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.0';
 const CACHE_NAME = `revisao-moto-${CACHE_VERSION}`;
 
 // App shell - arquivos essenciais para funcionar offline
@@ -40,6 +40,7 @@ const APP_SHELL = [
   './src/garantia.js',
   './src/torque.js',
   './src/servicos.js',
+  './src/sessao.js',
   './src/lembretes.js',
   './src/avulsos.js',
   './src/orcamento.js',

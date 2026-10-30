@@ -79,7 +79,13 @@ Depois: configurar `.env` e `usuarios.json`, rodar `scripts/setup_fase1.py`, apl
 | **Fase 9 (P2)** | Recebimento/avarias, recomendacoes, fotos antes/depois, lembretes ao cliente, numero de OS | OK | 136 |
 | **Fase 10 (P3)** | Comparacao entre revisoes, teste de rodagem, garantia, torque aplicado, revisao rapida | OK | 206 |
 
-**Total: 1120 testes automatizados** via `./tests/run_tests.sh`.
+**Total: 1186 testes automatizados** via `./tests/run_tests.sh` (fases 0 a 10 + sessão).
+
+### Correções transversais
+
+| Item | O que resolve |
+|---|---|
+| Menu de sessão (`src/sessao.js`) | O `logout()` existia desde a Fase 0, mas o botão "Sair" só estava no dashboard — nas outras 8 telas autenticadas não havia saída. Agora o menu é injetado em todas, e antes de encerrar confere a fila offline e as fotos pendentes: sair com trabalho não sincronizado passa a pedir confirmação. Tema, idioma e a flag de onboarding sobrevivem ao logout; a fila offline nunca é apagada |
 
 ### Fase 10 (P3) em detalhe
 

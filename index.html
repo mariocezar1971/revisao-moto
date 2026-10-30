@@ -78,7 +78,7 @@ if (!localStorage.getItem('rm_onboarding_visto') && !location.search.includes('s
                     <h1 class="text-lg font-bold">Revisão Moto</h1>
                     <p id="dash-usuario" class="text-xs text-slate-300"></p>
                 </div>
-                <button onclick="logout()" class="text-sm text-slate-300 hover:text-white">
+                <button onclick="window.sessao.sair()" class="text-sm text-slate-300 hover:text-white">
                     Sair
                 </button>
             </div>
@@ -171,6 +171,7 @@ if (!localStorage.getItem('rm_onboarding_visto') && !location.search.includes('s
     <!-- ============================================================ -->
     <script src="./src/supabase-client.js"></script>
     <script src="./src/auth.js"></script>
+    <script src="./src/sessao.js"></script>
     <script src="./src/offline.js"></script>
     <script src="./src/status_offline.js"></script>
     <script src="./src/darkmode.js"></script>
