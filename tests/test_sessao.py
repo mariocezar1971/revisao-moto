@@ -212,6 +212,48 @@ def t_service_worker():
           m.group(0).split("'")[-1] if m else '?')
 
 
+def ancora(css):
+    """Em que canto um elemento 'position: fixed' esta ancorado."""
+    v = 'top' if re.search(r'\btop:\s*\d', css) else ('bottom' if re.search(r'\bbottom:\s*\d', css) else '?')
+    h = 'left' if re.search(r'\bleft:\s*\d', css) else ('right' if re.search(r'\bright:\s*\d', css) else '?')
+    return f"{v}-{h}"
+
+
+def t_cantos_da_tela():
+    cabecalho("8. CANTOS DA TELA (nada cobre a saida)")
+    # Esta foi a falha de verdade: o botao "Sair" sempre esteve no
+    # cabecalho, mas o widget de status ficava por cima dele com
+    # z-index 60. Um botao coberto nao existe para quem usa - o app
+    # passou semanas parecendo nao ter logout.
+    cantos = {}
+    for arq, nome in [('status_offline.js', 'widget de status'),
+                      ('darkmode.js', 'botao de tema')]:
+        p = RAIZ / 'src' / arq
+        if not p.exists():
+            teste(f"{arq} existe", False)
+            continue
+        c = p.read_text()
+        m = re.search(r'position:\s*fixed;(.{0,200})', c, re.S)
+        canto = ancora(m.group(1)) if m else '?'
+        cantos[nome] = canto
+        teste(f"{nome} esta ancorado num canto conhecido", canto != '?', canto)
+
+    teste("Widget de status NAO fica no topo-direita",
+          cantos.get('widget de status') != 'top-right',
+          f"topo-direita e do menu de conta | widget: {cantos.get('widget de status')}")
+
+    vistos = [c for c in cantos.values() if c != '?']
+    teste("Os flutuantes nao dividem o mesmo canto",
+          len(vistos) == len(set(vistos)), ' / '.join(f'{k}: {v}' for k, v in cantos.items()))
+
+    # O menu de conta vive dentro do cabecalho; so faz sentido se
+    # nenhum flutuante com z-index alto passar por cima dele.
+    st = (RAIZ / 'src' / 'status_offline.js').read_text()
+    mz = re.search(r'z-index:\s*(\d+)', st)
+    z = int(mz.group(1)) if mz else 0
+    teste("z-index do widget abaixo do menu (z-50)", z < 50, f"z-index: {z}")
+
+
 def main():
     print(f"\n{'=' * 70}")
     print("  REVISAO-MOTO :: Testes do menu de sessao (logout)")
@@ -224,6 +266,7 @@ def main():
     t_menu_unico()
     t_acessibilidade_e_tema()
     t_service_worker()
+    t_cantos_da_tela()
 
     cabecalho("RESUMO :: SESSAO")
     print(f"  Total : {total}")

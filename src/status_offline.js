@@ -1,10 +1,21 @@
 // =====================================================================
 // REVISAO-MOTO :: Status Offline - indicador visual reutilizavel
 // =====================================================================
-// Widget flutuante no canto superior direito que mostra:
+// Widget flutuante no canto INFERIOR ESQUERDO que mostra:
 // - Bolinha colorida: verde (online), amarela (sincronizando), vermelha (offline)
 // - Contador de pendencias na fila (quando > 0)
 // - Ao clicar: forca sincronizacao
+//
+// Por que inferior esquerdo, e nao superior direito como nasceu:
+// no canto superior direito ele ficava exatamente sobre o botao "Sair"
+// do cabecalho, com z-index 60 - e um botao coberto por um widget
+// opaco simplesmente nao existe para quem usa. O app passou semanas
+// parecendo nao ter logout por causa disso.
+//
+// Os quatro cantos hoje: este (inferior esquerdo), o dark mode
+// (inferior direito), o menu de conta (dentro do cabecalho, a direita)
+// e nada no superior esquerdo, que e da seta de voltar.
+// Antes de mover qualquer um deles, confira se nao vai cobrir outro.
 // =====================================================================
 
 let statusEl = null;
@@ -17,9 +28,9 @@ function criarBadge() {
     statusEl.id = 'status-offline-badge';
     statusEl.style.cssText = `
         position: fixed;
-        top: 12px;
-        right: 12px;
-        z-index: 60;
+        bottom: 12px;
+        left: 12px;
+        z-index: 45;
         display: flex;
         align-items: center;
         gap: 6px;

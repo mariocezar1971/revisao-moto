@@ -128,7 +128,13 @@ def t_status_js():
 
     # UI
     teste("Cria elemento fixo (position: fixed)", 'position: fixed' in js)
-    teste("z-index alto", 'z-index: 60' in js or 'zIndex' in js)
+    # O valor exato nao importa; o que importa eh ficar acima do
+    # conteudo e ABAIXO dos modais (z-50). Fixar 60 aqui foi o que
+    # deixou o widget por cima do botao "Sair" ate a correcao.
+    _mz = re.search(r'z-index:\s*(\d+)', js)
+    _z = int(_mz.group(1)) if _mz else 0
+    teste("z-index definido e abaixo dos modais", 0 < _z < 50,
+          f"z-index: {_z if _mz else 'ausente'}")
     teste("Anima com pulse (sync)", 'pulse' in js and 'animation' in js)
 
     # Interatividade
