@@ -300,6 +300,101 @@
 </node>
 
 <!-- ============================================================ -->
+<!-- WSL E UBUNTU                                                 -->
+<!-- ============================================================ -->
+<node TEXT="WSL e Ubuntu" POSITION="left" ID="ID_wsl" COLOR="#ea580c">
+<font BOLD="true" SIZE="14"/>
+<icon BUILTIN="penguin"/>
+<edge COLOR="#ea580c" WIDTH="2"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Tudo do projeto roda dentro do WSL. O PowerShell serve s&#xf3;</p>
+<p>para entrar nele e para o clip.exe.</p>
+<p>&#160;</p>
+<p>A SENHA DO UBUNTU N&#xc3;O FICA AQUI. Este arquivo vai para o</p>
+<p>Dropbox, para o git e para o GitHub, que &#xe9; p&#xfa;blico - e o</p>
+<p>hist&#xf3;rico do git n&#xe3;o esquece. Guarde-a num gerenciador de</p>
+<p>senhas. Com o sudo sem senha configurado abaixo, voc&#xea; quase</p>
+<p>nunca vai precisar dela.</p>
+</body></html></richcontent>
+
+<node TEXT="Entrar">
+<node TEXT="wsl - do PowerShell, abre o Ubuntu"/>
+<node TEXT="exit - volta para o PowerShell"/>
+<node TEXT="wsl -l -v - distros instaladas e qual &#xe9; a padr&#xe3;o"/>
+</node>
+
+<node TEXT="Entrar como root (sem pedir senha)">
+<font BOLD="true"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Esta &#xe9; a porta dos fundos: o WSL deixa entrar como root sem</p>
+<p>senha nenhuma, a partir do Windows. &#xc9; por aqui que se sai de</p>
+<p>&quot;esqueci a senha do sudo&quot; sem reinstalar nada.</p>
+</body></html></richcontent>
+<node TEXT="wsl -d Ubuntu -u root"/>
+</node>
+
+<node TEXT="Redefinir a senha do usu&#xe1;rio">
+<node TEXT="Como root: passwd mceza"/>
+<node TEXT="Pede a nova senha duas vezes; nada aparece enquanto digita"/>
+<node TEXT="N&#xe3;o digite a senha no prompt errado">
+<icon BUILTIN="messagebox_warning"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Num &quot;Try again? [y/N]&quot; ou em qualquer prompt que n&#xe3;o seja o</p>
+<p>de senha, o que voc&#xea; digitar aparece em texto claro e fica</p>
+<p>no hist&#xf3;rico do terminal. Se isso acontecer, troque a senha.</p>
+</body></html></richcontent>
+</node>
+</node>
+
+<node TEXT="sudo sem senha (opcional)">
+<font BOLD="true"/>
+<richcontent TYPE="NOTE"><html><body>
+<p>Troca seguran&#xe7;a por comodidade: qualquer coisa rodando na sua</p>
+<p>sess&#xe3;o passa a poder virar root sem perguntar. Numa m&#xe1;quina</p>
+<p>pessoal, onde o WSL j&#xe1; deixa entrar como root sem senha pelo</p>
+<p>Windows, a conta fecha. Num equipamento compartilhado, n&#xe3;o.</p>
+<p>&#160;</p>
+<p>Fa&#xe7;a como root, e CONFIRA antes de sair da sess&#xe3;o root: um</p>
+<p>sudoers quebrado tranca o sudo de vez, e a&#xed; a &#xfa;nica volta</p>
+<p>&#xe9; justamente o wsl -u root.</p>
+</body></html></richcontent>
+<node TEXT="echo 'mceza ALL=(ALL) NOPASSWD:ALL' &gt; /etc/sudoers.d/mceza"/>
+<node TEXT="chmod 0440 /etc/sudoers.d/mceza"/>
+<node TEXT="visudo -c - valida a sintaxe; tem que dizer 'parsed OK'">
+<icon BUILTIN="messagebox_warning"/>
+</node>
+<node TEXT="cat /etc/sudoers.d/mceza - confere o conte&#xfa;do"/>
+<node TEXT="exit - sai do root"/>
+<node TEXT="Testar: wsl, depois sudo apt update (n&#xe3;o deve pedir senha)"/>
+</node>
+
+<node TEXT="Se o WSL sumir de vez">
+<richcontent TYPE="NOTE"><html><body>
+<p>Aconteceu em outubro: o servi&#xe7;o LxssManager desapareceu e o</p>
+<p>recurso aparecia como Disabled. N&#xe3;o foi preciso reinstalar o</p>
+<p>Windows - s&#xf3; reativar os dois recursos e reiniciar.</p>
+<p>&#160;</p>
+<p>No PowerShell COMO ADMINISTRADOR:</p>
+<p>dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart</p>
+<p>dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart</p>
+<p>Reiniciar o computador, e ent&#xe3;o: wsl --install -d Ubuntu</p>
+</body></html></richcontent>
+<node TEXT="Get-Service LxssManager - existe?"/>
+<node TEXT="wsl --status - vers&#xe3;o padr&#xe3;o deve ser 2"/>
+<node TEXT="Depois de reinstalar: o git reclama de dono e de identidade">
+<node TEXT="git config --global --add safe.directory /mnt/c/Users/mceza/Dropbox/PROJETOS/APLICATIVOS/JAVASCRIPT/APLICATIVOS/revisao-moto"/>
+<node TEXT="git config --global user.name e user.email de novo"/>
+</node>
+</node>
+
+<node TEXT="Pacotes que o projeto precisa">
+<node TEXT="sudo apt update"/>
+<node TEXT="sudo apt install -y postgresql postgresql-contrib python3 nodejs unzip"/>
+<node TEXT="O Postgres s&#xf3; serve aos testes; o banco de verdade &#xe9; o Supabase"/>
+</node>
+</node>
+
+<!-- ============================================================ -->
 <!-- ENDERECOS E COMANDOS                                         -->
 <!-- ============================================================ -->
 <node TEXT="Endere&#xe7;os" POSITION="right" ID="ID_enderecos" COLOR="#0891b2">
